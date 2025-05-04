@@ -1,46 +1,81 @@
-# Compose Multiplatform Application
+<h1 align="center">KDownloadFiles</h1><br>
 
-## Before running!
+<div align="center">
+<a href="https://opensource.org/licenses/Apache-2.0"><img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"/></a>
+<a href="https://android-arsenal.com/api?level=21" rel="nofollow">
+    <img alt="API" src="https://img.shields.io/badge/API-21%2B-brightgreen.svg?style=flat" style="max-width: 100%;">
+</a>
+<img src="https://img.shields.io/badge/Platform-Android-brightgreen.svg?logo=android" alt="Badge Android" />
+  <img src="https://img.shields.io/badge/Platform-iOS%20%2F%20macOS-lightgrey.svg?logo=apple" alt="Badge iOS" />
+  <!-- <img src="https://img.shields.io/badge/Platform-JVM-8A2BE2.svg?logo=openjdk" alt="Badge JVM" />
+    <img src="https://img.shields.io/badge/Platform-WASM%20%2F%20JS-yellow.svg?logo=javascript" alt="Badge JS" /> -->
+<a href="https://github.com/the-best-is-best/"><img alt="Profile" src="https://img.shields.io/badge/github-%23181717.svg?&style=for-the-badge&logo=github&logoColor=white" height="20"/></a>
 
-- check your system with [KDoctor](https://github.com/Kotlin/kdoctor)
-- install JDK 17 or higher on your machine
-- add `local.properties` file to the project root and set a path to Android SDK there
+</div>
 
-### Android
+kdownloadfile is a simple yet effective Kotlin Multiplatform library that enables downloading files via HTTP, saving them locally, and opening them using the system’s default application — all while abstracting away platform-specific details.
 
-To run the application on android device/emulator:
+## Download
 
-- open project in Android Studio and run imported android run configuration
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.the-best-is-best/kdownload_files)](https://central.sonatype.com/artifact/io.github.the-best-is-best/kdownload_files)
 
-To build the application bundle:
+KDownloadFiles available on `mavenCentral()`.
 
-- run `./gradlew :composeApp:assembleDebug`
-- find `.apk` file in `composeApp/build/outputs/apk/debug/composeApp-debug.apk`
-  Run android UI tests on the connected device: `./gradlew :composeApp:connectedDebugAndroidTest`
+```kotlin
+implementation("io.github.the-best-is-best:kdownload_files:1.0.0")
+```
 
-### Desktop
+## How to use
 
-Run the desktop application: `./gradlew :composeApp:run`
-Run the desktop **hot reload** application: `./gradlew :composeApp:jvmRunHot`)
-Run desktop UI tests: `./gradlew :composeApp:jvmTest`
+```kotlin
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import io.github.kdownloadfile.downloadFile
+import io.github.kdownloadfile.openFile
+import kotlinx.coroutines.launch
 
-### iOS
+@Composable
+fun DownloadButton() {
+    val scope = rememberCoroutineScope()
 
-To run the application on iPhone device/simulator:
+    Button(onClick = {
+        scope.launch {
+            val pathRes = downloadFile(
+                url = "https://firebasestorage.googleapis.com/v0/b/ecommerce-demo-48922.firebasestorage.app/o/test%2FIMG_0002.jpeg?alt=media&token=ae8223ac-b9b5-40e1-bd9a-ba869429e50f",
+                fileName = "IMG_0002.jpeg",
+                folderName = "firebaseStorage"
+            )
+            println("Download result: $pathRes")
+            pathRes?.fold(
+                onSuccess = { path ->
+                    println("File saved at: $path")
+                    openFile(path)
+                },
+                onFailure = { error ->
+                    println("Download failed: ${error.message}")
+                }
+            )
+        }
+    }) {
+        Text("Download")
+    }
+}
 
-- Open `iosApp/iosApp.xcproject` in Xcode and run standard configuration
-- Or
-  use [Kotlin Multiplatform Mobile plugin](https://plugins.jetbrains.com/plugin/14936-kotlin-multiplatform-mobile)
-  for Android Studio
-  Run iOS simulator UI tests: `./gradlew :composeApp:iosSimulatorArm64Test`
 
-### JS Browser (Experimental)
+```
 
-Run the browser application: `./gradlew :composeApp:jsBrowserDevelopmentRun --continue`
-Run browser UI tests: `./gradlew :composeApp:jsBrowserTest`
+<br>
 
-### Wasm Browser (Alpha)
+📂 What It Does
+Downloads a file from a URL.
 
-Run the browser application: `./gradlew :composeApp:wasmJsBrowserDevelopmentRun --continue`
-Run browser UI tests: `./gradlew :composeApp:wasmJsBrowserTest`
+Saves it to a platform-specific local folder.
 
+Opens it using the native application for that file type.
+
+<br>
+
+🛡 License
+Licensed under the Apache 2.0 License.
