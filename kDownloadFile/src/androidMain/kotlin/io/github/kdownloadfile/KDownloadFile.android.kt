@@ -1,5 +1,6 @@
 package io.github.kdownloadfile
 
+import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -16,7 +17,8 @@ actual fun saveBytes(
     fileName: String,
     folderName: String
 ): String {
-    val context: Context = applicationContext
+    val context =
+        AndroidKDownloadFile.activity.get() ?: throw Exception("Activity reference is null")
 
     val baseFolder = Environment.DIRECTORY_DOWNLOADS
 
@@ -82,16 +84,15 @@ actual fun saveBytes(
         }
     }
 }
-
 actual fun openFile(filePath: String) {
-    val context = applicationContext
+    val context =
+        AndroidKDownloadFile.activity.get() ?: throw Exception("Activity reference is null")
 
     val file: File? = when {
         filePath.startsWith("content://") -> null // التعامل مع URI مباشرةً
         filePath.startsWith("/storage/emulated/") || filePath.startsWith("/sdcard/") -> File(
             filePath
         )
-
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> getFileFromMediaStore(context, filePath)
         else -> File(context.getExternalFilesDir(null), filePath)
     }
@@ -119,7 +120,13 @@ actual fun openFile(filePath: String) {
     }
 
     try {
-        context.startActivity(Intent.createChooser(intent, "Open with"))
+        // تحقق من نوع context هنا لتحديد ما إذا كنت بحاجة إلى FLAG_ACTIVITY_NEW_TASK
+        if (context is Activity) {
+            context.startActivity(Intent.createChooser(intent, "Open with"))
+        } else {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(Intent.createChooser(intent, "Open with"))
+        }
     } catch (e: Exception) {
         println("❌ Error opening file: ${e.message}")
     }

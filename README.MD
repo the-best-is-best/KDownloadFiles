@@ -22,7 +22,47 @@ kdownloadfile is a simple yet effective Kotlin Multiplatform library that enable
 KDownloadFiles available on `mavenCentral()`.
 
 ```kotlin
-implementation("io.github.the-best-is-best:kdownload-file:1.0.1")
+implementation("io.github.the-best-is-best:kdownload-file:1.0.2")
+```
+
+## AndroidMain
+
+```kotlin
+        AndroidKDownloadFile.init(this)
+```
+
+## Android File Provider Configuration
+
+To ensure proper file access and sharing in Android, you need to configure the `FileProvider`.
+Follow these steps:
+
+### 1. Open your `AndroidManifest.xml` file.
+
+1. Add the following `<provider>` tag inside the `<application>` tag:
+
+```xml
+
+<provider android:name="androidx.core.content.FileProvider"
+    android:authorities="${applicationId}.fileprovider" android:exported="false"
+    android:grantUriPermissions="true">
+    <meta-data android:name="android.support.FILE_PROVIDER_PATHS"
+        android:resource="@xml/file_paths" />
+</provider>
+```
+
+2. Create a new XML file under the res/xml/ directory.
+   If the xml folder doesn't exist, create it.
+
+Name the new file file_paths.xml.
+
+3. Add the following content to the file_paths.xml file:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <external-path name="external_files" path="." />
+</paths>
+
 ```
 
 ## How to use

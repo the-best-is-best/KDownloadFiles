@@ -33,7 +33,7 @@ tasks.withType<PublishToMavenRepository> {
 extra["packageNameSpace"] = "io.github.kdownloadfile"
 extra["groupId"] = "io.github.the-best-is-best"
 extra["artifactId"] = "kdownload-file"
-extra["version"] = "1.0.1"
+extra["version"] = "1.0.2"
 extra["packageName"] = "KDownloadFile"
 extra["packageUrl"] = "https://github.com/the-best-is-best/KDownloadFiles"
 extra["packageDescription"] =
@@ -101,7 +101,7 @@ kotlin {
     androidLibrary {
         namespace = "io.github.kdownloadfile"
         compileSdk = 35
-        minSdk = 24
+        minSdk = 21
 
 
     }
@@ -171,7 +171,6 @@ kotlin {
                 // Add Android-specific dependencies here. Note that this source set depends on
                 // commonMain by default and will correctly pull the Android artifacts of any KMP
                 // dependencies declared in commonMain.
-                implementation(libs.androidx.startup.runtime)
                 implementation(libs.ktor.client.okhttp)
                 implementation(libs.core)
 
