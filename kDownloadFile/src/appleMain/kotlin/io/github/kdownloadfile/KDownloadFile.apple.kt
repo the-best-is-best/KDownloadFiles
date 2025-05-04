@@ -74,6 +74,7 @@ actual fun saveBytes(
     return finalFilePath
 }
 
+@OptIn(ExperimentalForeignApi::class)
 actual fun openFile(filePath: String) {
     val url = NSURL.fileURLWithPath(filePath)
 
@@ -81,23 +82,16 @@ actual fun openFile(filePath: String) {
         this.URL = url
     }
 
-    val keyWindow = UIApplication.sharedApplication.delegate?.window
-        ?: throw IllegalStateException("❌ No active window found!")
 
-    val rootViewController = keyWindow.rootViewController
-        ?: throw IllegalStateException("❌ No root view controller found!")
-
-    // تعيين المفوض
     val delegate = object : NSObject(), UIDocumentInteractionControllerDelegateProtocol {
         override fun documentInteractionControllerViewControllerForPreview(
             controller: UIDocumentInteractionController
         ): UIViewController {
-            return rootViewController
+            return UIApplication.sharedApplication.keyWindow!!.rootViewController!!
         }
     }
 
     documentController.delegate = delegate
 
-    // عرض المعاينة
     documentController.presentPreviewAnimated(true)
 }
