@@ -17,12 +17,12 @@ kdownloadfile is a simple yet effective Kotlin Multiplatform library that enable
 
 ## Download
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.the-best-is-best/kdownload_files)](https://central.sonatype.com/artifact/io.github.the-best-is-best/kdownload_files)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.the-best-is-best/kdownload-file)](https://central.sonatype.com/artifact/io.github.the-best-is-best/kdownload-file)
 
 KDownloadFiles available on `mavenCentral()`.
 
 ```kotlin
-implementation("io.github.the-best-is-best:kdownload_files:1.0.0")
+implementation("io.github.the-best-is-best:kdownload-file:1.0.0")
 ```
 
 ## How to use
