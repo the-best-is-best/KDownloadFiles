@@ -15,6 +15,7 @@ core = "1.6.1"
 junit = "1.2.1"
 startupRuntime = "1.2.0"
 ktor = "3.1.2"
+maven-publish = "0.31.0"
 
 [libraries]
 
@@ -41,3 +42,4 @@ compose = { id = "org.jetbrains.compose", version.ref = "compose" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 hotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "hotReload" }
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
