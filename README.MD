@@ -36,18 +36,20 @@ implementation("io.github.the-best-is-best:kdownload-file:1.0.2")
 To ensure proper file access and sharing in Android, you need to configure the `FileProvider`.
 Follow these steps:
 
-### 1. Open your `AndroidManifest.xml` file.
+### 1. Open your `AndroidManifest.xml` file
 
 1. Add the following `<provider>` tag inside the `<application>` tag:
 
 ```xml
-
-<provider android:name="androidx.core.content.FileProvider"
-    android:authorities="${applicationId}.fileprovider" android:exported="false"
-    android:grantUriPermissions="true">
-    <meta-data android:name="android.support.FILE_PROVIDER_PATHS"
-        android:resource="@xml/file_paths" />
-</provider>
+<provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/my_file_paths" />
+        </provider>
 ```
 
 2. Create a new XML file under the res/xml/ directory.
