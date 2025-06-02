@@ -1,29 +1,48 @@
 package io.github.kdownloadfile
 
 
-import kotlinx.browser.document
-import org.khronos.webgl.Uint8Array
-import org.w3c.dom.url.URL
-import org.w3c.files.Blob
-import org.w3c.files.BlobPropertyBag
-import kotlin.js.json
+import kotlinx.browser.window
+import kotlinx.coroutines.await
+import org.w3c.dom.HTMLAnchorElement
 
-actual fun saveBytes(
-    bytes: ByteArray,
+actual fun openFile(filePath: String) {
+    window.open(filePath, "_blank")
+}
+
+actual suspend fun downloadFile(
+    url: String,
     fileName: String,
-    folderName: String
-): String {
-    val uint8Array = js("new Uint8Array(bytes)") as Uint8Array
-    val blob = Blob(arrayOf(uint8Array), BlobPropertyBag(type = "application/octet-stream"))
+    folderName: String?
+): Result<String> {
+    return try {
+//        val response = window.fetch("sample.jpg").await()
 
-    val url = URL.createObjectURL(blob)
-    val a = document.createElement("a") as org.w3c.dom.HTMLAnchorElement
-    a.href = url
-    a.download = fileName
-    document.body?.appendChild(a)
-    a.click()
-    document.body?.removeChild(a)
-    URL.revokeObjectURL(url)
+        val response = window.fetch(url).await()
+        if (!response.ok) {
+            return Result.failure(Exception("Failed to fetch file: ${response.status}"))
+        }
 
-    return "Download triggered for $fileName"
+        val blob = response.blob().await()
+
+        // إنشاء الرابط المؤقت للملف
+        val blobUrl = js("window.URL.createObjectURL(blob)") as String
+
+        val anchor = window.document.createElement("a") as HTMLAnchorElement
+        anchor.href = blobUrl
+
+        anchor.download = fileName
+
+        anchor.style.display = "none"
+        window.document.body?.appendChild(anchor)
+        anchor.click()
+
+        window.setTimeout({
+            js("window.URL.revokeObjectURL(blobUrl)")
+            anchor.remove()
+        }, 2000)
+
+        Result.success(blobUrl)
+    } catch (e: Throwable) {
+        Result.failure(e)
+    }
 }

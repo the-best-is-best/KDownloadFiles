@@ -12,10 +12,11 @@ struct ComposeApp: App {
 
 struct ContentView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController {
-        return MainKt.MainViewController()
+        let vc = MainKt.MainViewController()
+        return vc
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
-        // Updates will be handled by Compose
+        // Compose will update the view automatically
     }
 }

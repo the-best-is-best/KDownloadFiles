@@ -34,12 +34,12 @@ internal fun App() = AppTheme {
             onClick = {
                 scope.launch {
                     val pathRes = downloadFile(
-                        url = "https://firebasestorage.googleapis.com/v0/b/ecommerce-demo-48922.firebasestorage.app/o/test%2FIMG_0002.jpeg?alt=media&token=ae8223ac-b9b5-40e1-bd9a-ba869429e50f",
-                        fileName = "2FIMG_0002.jpeg",
-                        folderName = "firebaseStorage"
+                        url = "https://sample-videos.com/img/Sample-jpg-image-50kb.jpg",
+                        fileName = "re.jpg",
+                        folderName = "re"
                     )
                     println("download path $pathRes")
-                    pathRes?.fold(
+                    pathRes.fold(
                         onSuccess = { path ->
                             println("download path $path")
                             openFile(path)

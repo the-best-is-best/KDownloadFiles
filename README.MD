@@ -11,6 +11,8 @@
     <img src="https://img.shields.io/badge/Platform-WASM%20%2F%20JS-yellow.svg?logo=javascript" alt="Badge JS" /> -->
 <a href="https://github.com/the-best-is-best/"><img alt="Profile" src="https://img.shields.io/badge/github-%23181717.svg?&style=for-the-badge&logo=github&logoColor=white" height="20"/></a>
 
+  <img src="https://img.shields.io/badge/Platform-JS-yellow.svg?logo=javascript" alt="Badge JS" />
+
 </div>
 
 kdownloadfile is a simple yet effective Kotlin Multiplatform library that enables downloading files via HTTP, saving them locally, and opening them using the system’s default application — all while abstracting away platform-specific details.
@@ -22,7 +24,7 @@ kdownloadfile is a simple yet effective Kotlin Multiplatform library that enable
 KDownloadFiles available on `mavenCentral()`.
 
 ```kotlin
-implementation("io.github.the-best-is-best:kdownload-file:1.0.2")
+implementation("io.github.the-best-is-best:kdownload-file:2.0.0")
 ```
 
 ## AndroidMain

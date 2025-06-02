@@ -33,7 +33,7 @@ tasks.withType<PublishToMavenRepository> {
 extra["packageNameSpace"] = "io.github.kdownloadfile"
 extra["groupId"] = "io.github.the-best-is-best"
 extra["artifactId"] = "kdownload-file"
-extra["version"] = "1.0.2"
+extra["version"] = "2.0.0"
 extra["packageName"] = "KDownloadFile"
 extra["packageUrl"] = "https://github.com/the-best-is-best/KDownloadFiles"
 extra["packageDescription"] =
@@ -100,18 +100,19 @@ kotlin {
 // See: https://kotlinlang.org/docs/multiplatform-discover-project.html#targets
     androidLibrary {
         namespace = "io.github.kdownloadfile"
-        compileSdk = 35
+        compileSdk = 36
         minSdk = 21
 
 
     }
     jvm()
 
-//    js {
-//        browser()
-//        binaries.executable()
-//    }
-//
+    js {
+        browser()
+        binaries.executable()
+    }
+
+//    @OptIn(ExperimentalWasmDsl::class)
 //    wasmJs {
 //        browser()
 //        binaries.executable()
@@ -154,7 +155,7 @@ kotlin {
             dependencies {
                 implementation(libs.kotlin.stdlib)
                 // Add KMP dependencies here
-                implementation(libs.ktor.client.core)
+//                implementation(libs.ktor.client.core)
                 implementation(libs.kotlinx.coroutines.core)
 
             }
@@ -173,6 +174,8 @@ kotlin {
                 // dependencies declared in commonMain.
                 implementation(libs.ktor.client.okhttp)
                 implementation(libs.core)
+                implementation(libs.androidx.core.ktx)
+                implementation(libs.androidx.startup.runtime)
 
             }
         }
@@ -194,6 +197,7 @@ kotlin {
             implementation(libs.ktor.client.apache5)
 
         }
+
     }
 
 }
