@@ -30,12 +30,6 @@ KDownloadFiles available on `mavenCentral()`.
 implementation("io.github.the-best-is-best:kdownload-file:2.0.0")
 ```
 
-## AndroidMain
-
-```kotlin
-        AndroidKDownloadFile.init(this)
-```
-
 ## Android File Provider Configuration
 
 To ensure proper file access and sharing in Android, you need to configure the `FileProvider`.
