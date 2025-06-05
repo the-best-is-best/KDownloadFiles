@@ -1,16 +1,21 @@
 package io.github.kdownloadfile
 
 import android.app.DownloadManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.io.File
+import kotlin.coroutines.resume
 
 actual fun openFile(filePath: String) {
     val context = AndroidKDownloadFile.appContext
@@ -69,35 +74,59 @@ actual fun openFile(filePath: String) {
 actual suspend fun downloadFile(
     url: String,
     fileName: String,
-    folderName: String?
+    folderName: String?,
 ): Result<String> = withContext(Dispatchers.IO) {
-    try {
-        val context = AndroidKDownloadFile.appContext
+    suspendCancellableCoroutine<Result<String>> { continuation ->
+        try {
+            val context = AndroidKDownloadFile.appContext
+            val destinationPath = if (!folderName.isNullOrEmpty()) {
+                "$folderName/$fileName"
+            } else {
+                fileName
+            }
 
-        // تجهيز مسار الحفظ مع المجلد الفرعي (إذا موجود)
-        val destinationPath = if (!folderName.isNullOrEmpty()) {
-            "$folderName/$fileName"
-        } else {
-            fileName
+            val request = DownloadManager.Request(url.toUri())
+                .setTitle(fileName)
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, destinationPath)
+                .setAllowedOverMetered(true)
+                .setAllowedOverRoaming(true)
+
+            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            val downloadId = downloadManager.enqueue(request)
+
+            val onCompleteReceiver = object : BroadcastReceiver() {
+                override fun onReceive(ctx: Context?, intent: Intent?) {
+                    val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
+                    if (id == downloadId) {
+                        context.unregisterReceiver(this)
+
+                        val savedUri =
+                            "file://${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}/$destinationPath".toUri()
+
+                        continuation.resume(Result.success(savedUri.toString()))
+                    }
+                }
+            }
+
+            ContextCompat.registerReceiver(
+                context,
+                onCompleteReceiver,
+                IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+
+            continuation.invokeOnCancellation {
+                try {
+                    context.unregisterReceiver(onCompleteReceiver)
+                } catch (_: IllegalArgumentException) {
+                    // تم إلغاء التسجيل سابقاً
+                }
+            }
+        } catch (e: Exception) {
+            continuation.resume(Result.failure(e))
         }
-
-        val request = DownloadManager.Request(Uri.parse(url))
-            .setTitle(fileName)
-            .setDescription("Downloading file")
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, destinationPath)
-            .setAllowedOverMetered(true)
-            .setAllowedOverRoaming(true)
-
-        val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        downloadManager.enqueue(request)
-
-        val savedUri =
-            "file://${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}/$destinationPath".toUri()
-
-        Result.success(savedUri.toString())
-    } catch (e: Exception) {
-        Result.failure(e)
     }
 }
+
 
