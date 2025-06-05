@@ -27,7 +27,7 @@ kdownloadfile is a simple yet effective Kotlin Multiplatform library that enable
 KDownloadFiles available on `mavenCentral()`.
 
 ```kotlin
-implementation("io.github.the-best-is-best:kdownload-file:2.0.0")
+implementation("io.github.the-best-is-best:kdownload-file:2.0.1")
 ```
 
 ## Android File Provider Configuration

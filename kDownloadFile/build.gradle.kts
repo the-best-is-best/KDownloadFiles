@@ -33,7 +33,7 @@ tasks.withType<PublishToMavenRepository> {
 extra["packageNameSpace"] = "io.github.kdownloadfile"
 extra["groupId"] = "io.github.the-best-is-best"
 extra["artifactId"] = "kdownload-file"
-extra["version"] = "2.0.0"
+extra["version"] = "2.0.1"
 extra["packageName"] = "KDownloadFile"
 extra["packageUrl"] = "https://github.com/the-best-is-best/KDownloadFiles"
 extra["packageDescription"] =
@@ -172,7 +172,6 @@ kotlin {
                 // Add Android-specific dependencies here. Note that this source set depends on
                 // commonMain by default and will correctly pull the Android artifacts of any KMP
                 // dependencies declared in commonMain.
-                implementation(libs.ktor.client.okhttp)
                 implementation(libs.core)
                 implementation(libs.androidx.core.ktx)
                 implementation(libs.androidx.startup.runtime)
@@ -189,13 +188,10 @@ kotlin {
                 // part of KMP’s default source set hierarchy. Note that this source set depends
                 // on common by default and will correctly pull the iOS artifacts of any
                 // KMP dependencies declared in commonMain.
-                implementation(libs.ktor.client.darwin)
 
             }
         }
         jvmMain.dependencies {
-            implementation(libs.ktor.client.apache5)
-
         }
 
     }

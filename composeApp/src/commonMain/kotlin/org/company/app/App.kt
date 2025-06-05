@@ -49,9 +49,9 @@ internal fun App() = AppTheme {
                     } else if (permissions.allPermissionsGranted) {
 
                         val pathRes = downloadFile(
-                            url = "https://sample-videos.com/img/Sample-jpg-image-50kb.jpg",
-                            fileName = "re.jpg",
-                            folderName = "re"
+                            url = "https://research.nhm.org/pdfs/10840/10840-001.pdf",
+                            fileName = "re.pdf",
+                            folderName = "doc"
                         )
                         println("download path $pathRes")
                         pathRes.fold(
