@@ -13,16 +13,27 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.mohamedrejeb.calf.permissions.ExperimentalPermissionsApi
+import com.mohamedrejeb.calf.permissions.Permission
+import com.mohamedrejeb.calf.permissions.rememberMultiplePermissionsState
 import io.github.kdownloadfile.downloadFile
 import io.github.kdownloadfile.openFile
 import kotlinx.coroutines.launch
 import org.company.app.theme.AppTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Preview
 @Composable
 internal fun App() = AppTheme {
     val scope = rememberCoroutineScope()
+    val permissions = rememberMultiplePermissionsState(
+        permissions = listOf(
+            Permission.WriteStorage,
+            Permission.ReadStorage,
+            Permission.Notification
+        )
+    )
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -33,21 +44,29 @@ internal fun App() = AppTheme {
         ElevatedButton(
             onClick = {
                 scope.launch {
-                    val pathRes = downloadFile(
-                        url = "https://sample-videos.com/img/Sample-jpg-image-50kb.jpg",
-                        fileName = "re.jpg",
-                        folderName = "re"
-                    )
-                    println("download path $pathRes")
-                    pathRes.fold(
-                        onSuccess = { path ->
-                            println("download path $path")
-                            openFile(path)
-                        },
-                        onFailure = { error ->
-                            println("error $error")
-                        }
-                    )
+                    if (!permissions.allPermissionsGranted && !permissions.shouldShowRationale) {
+                        permissions.launchMultiplePermissionRequest()
+                    } else if (permissions.allPermissionsGranted) {
+
+                        val pathRes = downloadFile(
+                            url = "https://sample-videos.com/img/Sample-jpg-image-50kb.jpg",
+                            fileName = "re.jpg",
+                            folderName = "re"
+                        )
+                        println("download path $pathRes")
+                        pathRes.fold(
+                            onSuccess = { path ->
+                                println("download path $path")
+                                openFile(path)
+                            },
+                            onFailure = { error ->
+                                println("error $error")
+                            }
+                        )
+                    } else {
+                        println("permissions not granted")
+                    }
+
                 }
             }) {
             Text("Download")

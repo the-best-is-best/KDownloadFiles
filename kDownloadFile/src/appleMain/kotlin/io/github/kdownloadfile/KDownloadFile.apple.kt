@@ -30,62 +30,6 @@ import kotlin.coroutines.resume
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
-//
-//@OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
-//actual fun saveBytes(
-//    bytes: ByteArray,
-//    fileName: String,
-//    folderName: String
-//): String {
-//    // Get the default file manager instance
-//    val fileManager = NSFileManager.defaultManager
-//    // Define the base directory as the app's Documents directory
-//    val baseDirectory = NSDocumentDirectory
-//
-//    // Get the URL for the specified folder inside Documents directory
-//    val directoryUrl = fileManager.URLForDirectory(
-//        baseDirectory,
-//        NSUserDomainMask,
-//        null,
-//        true,
-//        null
-//    )?.URLByAppendingPathComponent(folderName)
-//        ?: throw IllegalStateException("Invalid directory URL")
-//
-//    // Get the path string of the directory
-//    val directoryPath = directoryUrl.path ?: throw IllegalStateException("Invalid directory path")
-//
-//    // Create the directory if it doesn't exist yet
-//    if (!fileManager.fileExistsAtPath(directoryPath)) {
-//        val success = fileManager.createDirectoryAtPath(directoryPath, attributes = emptyMap<Any?, Any?>())
-//        if (!success) throw IllegalStateException("Failed to create directory at $directoryPath")
-//    }
-//
-//    // Create the full file URL by appending the fileName
-//    var finalFileUrl = directoryUrl.URLByAppendingPathComponent(fileName)
-//    // Get the path string of the final file URL
-//    var finalFilePath = finalFileUrl?.path ?: throw IllegalStateException("Could not create file URL")
-//
-//    // If file with same name exists, generate a unique file name
-//    while (fileManager.fileExistsAtPath(finalFilePath)) {
-//        val uniqueName = "${NSUUID.UUID().UUIDString}_$fileName"
-//        finalFileUrl = directoryUrl.URLByAppendingPathComponent(uniqueName)
-//        finalFilePath = finalFileUrl?.path ?: throw IllegalStateException("Could not generate unique file path")
-//    }
-//
-//    // Create NSData from the byte array
-//    val data = bytes.usePinned { pinned ->
-//        NSData.create(bytes = pinned.addressOf(0), length = bytes.size.toULong())
-//    }
-//
-//    // Write the NSData to the file at the specified path
-//    if (!data.writeToFile(finalFilePath, true)) {
-//        throw IllegalStateException("Failed to save file at: $finalFilePath")
-//    }
-//
-//    println("File saved successfully at: $finalFilePath")
-//    return finalFilePath
-//}
 
 private var documentController: UIDocumentInteractionController? = null
 private var documentDelegate: UIDocumentInteractionControllerDelegateProtocol? = null

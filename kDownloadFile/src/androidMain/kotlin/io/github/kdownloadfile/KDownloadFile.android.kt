@@ -76,18 +76,18 @@ actual suspend fun downloadFile(
     fileName: String,
     folderName: String?,
 ): Result<String> = withContext(Dispatchers.IO) {
-    suspendCancellableCoroutine<Result<String>> { continuation ->
-        try {
-            val context = AndroidKDownloadFile.appContext
-            val destinationPath = if (!folderName.isNullOrEmpty()) {
-                "$folderName/$fileName"
-            } else {
-                fileName
-            }
+    suspendCancellableCoroutine { continuation ->
+        val context = AndroidKDownloadFile.appContext // احصل على applicationContext وليس activity
+        val destinationPath = if (!folderName.isNullOrEmpty()) {
+            "$folderName/$fileName"
+        } else {
+            fileName
+        }
 
+        try {
             val request = DownloadManager.Request(url.toUri())
                 .setTitle(fileName)
-                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
                 .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, destinationPath)
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(true)
@@ -95,38 +95,57 @@ actual suspend fun downloadFile(
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             val downloadId = downloadManager.enqueue(request)
 
-            val onCompleteReceiver = object : BroadcastReceiver() {
+            val receiver = object : BroadcastReceiver() {
                 override fun onReceive(ctx: Context?, intent: Intent?) {
-                    val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
+                    val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L) ?: -1L
                     if (id == downloadId) {
-                        context.unregisterReceiver(this)
+                        try {
+                            context.unregisterReceiver(this)
+                        } catch (ex: Exception) {
+                            // Ignore
+                        }
 
-                        val savedUri =
-                            "file://${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}/$destinationPath".toUri()
+                        val query = DownloadManager.Query().setFilterById(downloadId)
+                        val cursor = downloadManager.query(query)
 
-                        continuation.resume(Result.success(savedUri.toString()))
+                        if (cursor != null && cursor.moveToFirst()) {
+                            val status =
+                                cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+                            if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                                val uri =
+                                    cursor.getString(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI))
+                                cursor.close()
+                                continuation.resume(Result.success(uri ?: ""))
+                            } else {
+                                val reason =
+                                    cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON))
+                                cursor.close()
+                                continuation.resume(Result.failure(Exception("Download failed: reason $reason")))
+                            }
+                        } else {
+                            cursor?.close()
+                            continuation.resume(Result.failure(Exception("Cursor is empty or null.")))
+                        }
                     }
                 }
             }
 
             ContextCompat.registerReceiver(
                 context,
-                onCompleteReceiver,
+                receiver,
                 IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-                ContextCompat.RECEIVER_NOT_EXPORTED
+                ContextCompat.RECEIVER_EXPORTED
             )
 
             continuation.invokeOnCancellation {
                 try {
-                    context.unregisterReceiver(onCompleteReceiver)
-                } catch (_: IllegalArgumentException) {
-                    // تم إلغاء التسجيل سابقاً
+                    context.unregisterReceiver(receiver)
+                } catch (_: Exception) {
                 }
             }
+
         } catch (e: Exception) {
             continuation.resume(Result.failure(e))
         }
     }
 }
-
-

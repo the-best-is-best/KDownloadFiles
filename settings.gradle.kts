@@ -36,3 +36,4 @@ plugins {
 include(":composeApp")
 
 include(":kDownloadFile")
+include(":calfPermissions")

@@ -15,8 +15,6 @@ actual suspend fun downloadFile(
     folderName: String?
 ): Result<String> {
     return try {
-//        val response = window.fetch("sample.jpg").await()
-
         val response = window.fetch(url).await()
         if (!response.ok) {
             return Result.failure(Exception("Failed to fetch file: ${response.status}"))
@@ -24,7 +22,6 @@ actual suspend fun downloadFile(
 
         val blob = response.blob().await()
 
-        // إنشاء الرابط المؤقت للملف
         val blobUrl = js("window.URL.createObjectURL(blob)") as String
 
         val anchor = window.document.createElement("a") as HTMLAnchorElement

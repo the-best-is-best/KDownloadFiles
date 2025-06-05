@@ -49,6 +49,7 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
+            implementation(project(":calfPermissions"))
 
             implementation(project(":kDownloadFile"))
         }
@@ -77,11 +78,11 @@ kotlin {
 
 android {
     namespace = "org.company.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 21
-        targetSdk = 35
+        targetSdk = 36
 
         applicationId = "org.company.app.androidApp"
         versionCode = 1
