@@ -9,13 +9,14 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mohamedrejeb.calf.permissions.ExperimentalPermissionsApi
 import com.mohamedrejeb.calf.permissions.Permission
-import com.mohamedrejeb.calf.permissions.rememberMultiplePermissionsState
+import com.mohamedrejeb.calf.permissions.rememberPermissionState
 import io.github.kdownloadfile.downloadFile
 import io.github.kdownloadfile.openFile
 import kotlinx.coroutines.launch
@@ -27,13 +28,13 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 internal fun App() = AppTheme {
     val scope = rememberCoroutineScope()
-    val permissions = rememberMultiplePermissionsState(
-        permissions = listOf(
-            Permission.WriteStorage,
-            Permission.ReadStorage,
-            Permission.Notification
-        )
+    val notificationPermissionState = rememberPermissionState(
+        Permission.Notification,
+
     )
+    LaunchedEffect(Unit) {
+        notificationPermissionState.launchPermissionRequest()
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -44,10 +45,6 @@ internal fun App() = AppTheme {
         ElevatedButton(
             onClick = {
                 scope.launch {
-                    if (!permissions.allPermissionsGranted && !permissions.shouldShowRationale) {
-                        permissions.launchMultiplePermissionRequest()
-                    } else if (permissions.allPermissionsGranted) {
-
                         val pathRes = downloadFile(
                             url = "https://research.nhm.org/pdfs/10840/10840-001.pdf",
                             fileName = "re.pdf",
@@ -63,10 +60,6 @@ internal fun App() = AppTheme {
                                 println("error $error")
                             }
                         )
-                    } else {
-                        println("permissions not granted")
-                    }
-
                 }
             }) {
             Text("Download")
