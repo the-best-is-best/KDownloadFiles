@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.util.Log
 import androidx.core.content.ContextCompat
@@ -93,9 +94,13 @@ actual suspend fun downloadFile(
                 .setAllowedOverRoaming(true)
                 .addRequestHeader(
                     "User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+                    getUserAgent()
                 )
 
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                request.setRequiresCharging(false)
+                request.setRequiresDeviceIdle(false)
+            }
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             val downloadId = downloadManager.enqueue(request)
 
@@ -153,3 +158,21 @@ actual suspend fun downloadFile(
         }
     }
 }
+
+private fun getUserAgent(): String {
+    val ctx = AndroidKDownloadFile.appContext
+    val packageInfo = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
+    val appName = ctx.applicationInfo.loadLabel(ctx.packageManager).toString()
+    val version = packageInfo.versionName ?: "1.0"
+
+    val model = Build.MODEL ?: "Unknown"
+    val manufacturer = Build.MANUFACTURER ?: "Unknown"
+    val osVersion = Build.VERSION.RELEASE ?: "Unknown"
+    val sdkInt = Build.VERSION.SDK_INT
+
+    return "$appName/$version " +
+            "(Android; $manufacturer $model; Android $osVersion SDK $sdkInt)"
+
+}
+
+

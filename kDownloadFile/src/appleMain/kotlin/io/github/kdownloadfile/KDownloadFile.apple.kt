@@ -9,11 +9,13 @@ import kotlinx.cinterop.ptr
 import kotlinx.cinterop.value
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import platform.Foundation.NSBundle
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSError
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSHTTPURLResponse
 import platform.Foundation.NSMutableURLRequest
+import platform.Foundation.NSProcessInfo
 import platform.Foundation.NSURL
 import platform.Foundation.NSURLConnection
 import platform.Foundation.NSURLResponse
@@ -23,6 +25,7 @@ import platform.Foundation.setHTTPMethod
 import platform.Foundation.setValue
 import platform.Foundation.writeToURL
 import platform.UIKit.UIApplication
+import platform.UIKit.UIDevice
 import platform.UIKit.UIDocumentInteractionController
 import platform.UIKit.UIDocumentInteractionControllerDelegateProtocol
 import platform.UIKit.UINavigationController
@@ -128,7 +131,7 @@ actual suspend fun downloadFile(
                 setURL(nsUrl)
                 setHTTPMethod("GET")
                 setValue(
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+                    getUserAgent(),
                     forHTTPHeaderField = "User-Agent"
                 )
             }
@@ -179,3 +182,23 @@ actual suspend fun downloadFile(
     }
 }
 
+private fun getUserAgent(): String {
+    val infoDictionary = NSBundle.mainBundle.infoDictionary
+    val appName = infoDictionary?.get("CFBundleName") as? String ?: "App"
+    val version = infoDictionary?.get("CFBundleShortVersionString") as? String ?: "1.0"
+    val build = infoDictionary?.get("CFBundleVersion") as? String ?: "1"
+
+    val cfNetworkVersion = NSProcessInfo.processInfo
+        .environment["CFNETWORK_VERSION"] as? String ?: "Unknown"
+    val darwinVersion = NSProcessInfo.processInfo
+        .operatingSystemVersionString.split("Darwin/").getOrNull(1) ?: "Unknown"
+
+    val modelName = UIDevice.currentDevice.model
+    val platform = UIDevice.currentDevice.systemName
+    val osVersion = NSProcessInfo.processInfo.operatingSystemVersionString
+
+    return "$appName/$version.$build " +
+            "($platform; $modelName; $osVersion) " +
+            "CFNetwork/$cfNetworkVersion " +
+            "Darwin/$darwinVersion"
+}
