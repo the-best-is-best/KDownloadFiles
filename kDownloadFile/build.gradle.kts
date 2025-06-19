@@ -33,7 +33,7 @@ tasks.withType<PublishToMavenRepository> {
 extra["packageNameSpace"] = "io.github.kdownloadfile"
 extra["groupId"] = "io.github.the-best-is-best"
 extra["artifactId"] = "kdownload-file"
-extra["version"] = "2.0.3"
+extra["version"] = "2.0.4"
 extra["packageName"] = "KDownloadFile"
 extra["packageUrl"] = "https://github.com/the-best-is-best/KDownloadFiles"
 extra["packageDescription"] =
