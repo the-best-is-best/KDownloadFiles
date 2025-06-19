@@ -4,19 +4,24 @@ import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCObjectVar
 import kotlinx.cinterop.alloc
-import kotlinx.cinterop.free
-import kotlinx.cinterop.nativeHeap
+import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.value
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSError
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSHTTPURLResponse
+import platform.Foundation.NSMutableURLRequest
 import platform.Foundation.NSURL
-import platform.Foundation.NSURLSession
+import platform.Foundation.NSURLConnection
+import platform.Foundation.NSURLResponse
 import platform.Foundation.NSUserDomainMask
-import platform.Foundation.downloadTaskWithURL
+import platform.Foundation.sendSynchronousRequest
+import platform.Foundation.setHTTPMethod
+import platform.Foundation.setValue
+import platform.Foundation.writeToURL
 import platform.UIKit.UIApplication
 import platform.UIKit.UIDocumentInteractionController
 import platform.UIKit.UIDocumentInteractionControllerDelegateProtocol
@@ -26,7 +31,6 @@ import platform.UIKit.UIViewController
 import platform.darwin.NSObject
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
-import kotlin.coroutines.resume
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -83,19 +87,66 @@ private fun generateHashedFileName(originalName: String): String {
     return "${namePart}_$hash$extPart"
 }
 
-
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 actual suspend fun downloadFile(
     url: String,
     fileName: String,
     folderName: String?
-): Result<String> {
-    return try {
-        suspendCancellableCoroutine { cont ->
-            val nsUrl = NSURL.URLWithString(url) ?: run {
-                cont.resume(Result.failure(Exception("Invalid URL")))
-                return@suspendCancellableCoroutine
+): Result<String> = withContext(Dispatchers.Default) {
+    memScoped {
+        try {
+            val nsUrl = NSURL.URLWithString(url)
+                ?: return@withContext Result.failure(Exception("Invalid URL"))
+
+            val headRequest = NSMutableURLRequest().apply {
+                setURL(nsUrl)
+                setHTTPMethod("HEAD")
+                setValue(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+                    forHTTPHeaderField = "User-Agent"
+                )
             }
+
+            val headErrorPtr = alloc<ObjCObjectVar<NSError?>>()
+            val headResponsePtr = alloc<ObjCObjectVar<NSURLResponse?>>()
+
+            NSURLConnection.sendSynchronousRequest(
+                request = headRequest,
+                returningResponse = headResponsePtr.ptr,
+                error = headErrorPtr.ptr
+            )
+
+            val headError = headErrorPtr.value
+            val headResponse = headResponsePtr.value as? NSHTTPURLResponse
+
+            if (headError != null || headResponse == null || headResponse.statusCode.toInt() !in 200..299) {
+                val reason = headError?.localizedDescription ?: "Invalid response"
+                return@withContext Result.failure(Exception("Invalid URL or not reachable: $reason"))
+            }
+
+            val request = NSMutableURLRequest().apply {
+                setURL(nsUrl)
+                setHTTPMethod("GET")
+                setValue(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+                    forHTTPHeaderField = "User-Agent"
+                )
+            }
+
+            val responsePtr = alloc<ObjCObjectVar<NSURLResponse?>>()
+            val errorPtr = alloc<ObjCObjectVar<NSError?>>()
+
+            val data = NSURLConnection.sendSynchronousRequest(
+                request = request,
+                returningResponse = responsePtr.ptr,
+                error = errorPtr.ptr
+            )
+
+            if (data == null || errorPtr.value != null) {
+                val errorMsg = errorPtr.value?.localizedDescription ?: "Unknown error"
+                return@withContext Result.failure(Exception("Failed to download file: $errorMsg"))
+            }
+
             val fileManager = NSFileManager.defaultManager
             val documentsUrl = fileManager.URLForDirectory(
                 NSDocumentDirectory,
@@ -103,71 +154,28 @@ actual suspend fun downloadFile(
                 null,
                 false,
                 null
-            ) ?: run {
-                cont.resume(Result.failure(Exception("Could not get documents directory")))
-                return@suspendCancellableCoroutine
-            }
+            ) ?: return@withContext Result.failure(Exception("Couldn't access document directory"))
 
-            // حدد مسار المجلد (لو folderName موجود)
-            val baseFolderUrl = if (folderName != null) {
+            val baseFolderUrl = if (!folderName.isNullOrEmpty()) {
                 val folderUrl = documentsUrl.URLByAppendingPathComponent(folderName, true)
                 if (!fileManager.fileExistsAtPath(folderUrl!!.path!!)) {
-                    val errorPtr = nativeHeap.alloc<ObjCObjectVar<NSError?>>()
-                    try {
-                        fileManager.createDirectoryAtURL(folderUrl, true, null, errorPtr.ptr)
-                    } finally {
-                        nativeHeap.free(errorPtr)
-                    }
+                    val errorCreatePtr = alloc<ObjCObjectVar<NSError?>>()
+                    fileManager.createDirectoryAtURL(folderUrl, true, null, errorCreatePtr.ptr)
                 }
                 folderUrl
             } else {
                 documentsUrl
             }
 
-            var destinationUrl = baseFolderUrl.URLByAppendingPathComponent(fileName)
-
-            // لو الملف موجود مسبقاً، نعدل الاسم بإضافة هاش
-            if (fileManager.fileExistsAtPath(destinationUrl!!.path!!)) {
-                val newFileName = generateHashedFileName(fileName)
-                destinationUrl = baseFolderUrl.URLByAppendingPathComponent(newFileName)
+            val destinationUrl = baseFolderUrl.URLByAppendingPathComponent(fileName)
+            if (!data.writeToURL(destinationUrl!!, true)) {
+                return@withContext Result.failure(Exception("Failed to write file"))
             }
 
-            val session = NSURLSession.sharedSession
-
-            val task = session.downloadTaskWithURL(nsUrl) { tempFileUrl, response, error ->
-                if (error != null) {
-                    cont.resume(Result.failure(Exception(error.localizedDescription)))
-                    return@downloadTaskWithURL
-                }
-
-                val httpResponse = response as? NSHTTPURLResponse
-                if (httpResponse?.statusCode?.toInt() == 200 && tempFileUrl != null) {
-                    val errorPtr = nativeHeap.alloc<ObjCObjectVar<NSError?>>()
-                    try {
-                        val success =
-                            fileManager.moveItemAtURL(tempFileUrl, destinationUrl!!, errorPtr.ptr)
-                        if (!success) {
-                            val nsError = errorPtr.value
-                            val message = nsError?.localizedDescription ?: "Unknown error"
-                            cont.resume(Result.failure(Exception("Failed to move file: $message")))
-                            return@downloadTaskWithURL
-                        }
-                        cont.resume(Result.success(destinationUrl.path ?: ""))
-                    } finally {
-                        nativeHeap.free(errorPtr)
-                    }
-                } else {
-                    cont.resume(Result.failure(Exception("Download failed with status ${httpResponse?.statusCode}")))
-                }
-            }
-
-            task.resume()
-
-            cont.invokeOnCancellation {
-                task.cancel()
-            }
+            return@withContext Result.success(destinationUrl.path!!)
+        } catch (e: Exception) {
+            return@withContext Result.failure(e)
         }
-    } catch (e: Exception) {
-        Result.failure(e)
     }
 }
+
