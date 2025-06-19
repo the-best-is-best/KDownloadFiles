@@ -34,8 +34,6 @@ import platform.UIKit.UIViewController
 import platform.darwin.NSObject
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
 
 private var documentController: UIDocumentInteractionController? = null
@@ -79,17 +77,6 @@ private fun getTopViewController(
 }
 
 
-@OptIn(ExperimentalTime::class)
-private fun generateHashedFileName(originalName: String): String {
-    val dotIndex = originalName.lastIndexOf('.')
-    val namePart = if (dotIndex != -1) originalName.substring(0, dotIndex) else originalName
-    val extPart = if (dotIndex != -1) originalName.substring(dotIndex) else ""
-
-    // استخدم timestamp كهاش بسيط
-    val hash = Clock.System.now().toEpochMilliseconds()
-    return "${namePart}_$hash$extPart"
-}
-
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 actual suspend fun downloadFile(
     url: String,
@@ -105,7 +92,7 @@ actual suspend fun downloadFile(
                 setURL(nsUrl)
                 setHTTPMethod("HEAD")
                 setValue(
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+                    getUserAgent(),
                     forHTTPHeaderField = "User-Agent"
                 )
             }

@@ -88,7 +88,8 @@ actual suspend fun downloadFile(
         try {
             val request = DownloadManager.Request(url.toUri())
                 .setTitle(fileName)
-                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
+                .setDescription("Downloading")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, destinationPath)
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(true)
@@ -103,6 +104,11 @@ actual suspend fun downloadFile(
             }
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             val downloadId = downloadManager.enqueue(request)
+
+            if (downloadId == -1L) {
+                continuation.resume(Result.failure(Exception("❌ Failed to start download: Invalid downloadId (-1L)")))
+                return@suspendCancellableCoroutine
+            }
 
             val receiver = object : BroadcastReceiver() {
                 override fun onReceive(ctx: Context?, intent: Intent?) {
