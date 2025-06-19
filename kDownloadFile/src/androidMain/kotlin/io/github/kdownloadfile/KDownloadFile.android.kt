@@ -71,6 +71,7 @@ actual fun openFile(filePath: String) {
         Log.e("OpenFile", "❌ Error opening file: ${e::class.simpleName}: ${e.message}")
     }
 }
+
 actual suspend fun downloadFile(
     url: String,
     fileName: String,
@@ -86,7 +87,7 @@ actual suspend fun downloadFile(
         }
 
         try {
-            val request = DownloadManager.Request(url.toUri())
+            val request = DownloadManager.Request(url.trim().toUri())
                 .setTitle(fileName)
                 .setDescription("Downloading")
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)

@@ -85,7 +85,7 @@ actual suspend fun downloadFile(
 ): Result<String> = withContext(Dispatchers.Default) {
     memScoped {
         try {
-            val nsUrl = NSURL.URLWithString(url)
+            val nsUrl = NSURL.URLWithString(url.trim())
                 ?: return@withContext Result.failure(Exception("Invalid URL"))
 
             val headRequest = NSMutableURLRequest().apply {
