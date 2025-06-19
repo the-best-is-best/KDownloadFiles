@@ -10,7 +10,8 @@ expect fun openFile(
 expect suspend fun downloadFile(
     url: String,
     fileName: String,
-    folderName: String? = null
+    folderName: String? = null,
+    customHeaders: Map<String, String> = emptyMap()
 ): Result<String>
 
 

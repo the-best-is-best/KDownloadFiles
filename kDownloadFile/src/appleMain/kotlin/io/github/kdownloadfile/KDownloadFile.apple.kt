@@ -39,7 +39,6 @@ import platform.darwin.dispatch_get_main_queue
 private var documentController: UIDocumentInteractionController? = null
 private var documentDelegate: UIDocumentInteractionControllerDelegateProtocol? = null
 
-@OptIn(ExperimentalForeignApi::class)
 actual fun openFile(filePath: String) {
     val url = NSURL.fileURLWithPath(filePath)
 
@@ -81,7 +80,8 @@ private fun getTopViewController(
 actual suspend fun downloadFile(
     url: String,
     fileName: String,
-    folderName: String?
+    folderName: String?,
+    customHeaders: Map<String, String>,
 ): Result<String> = withContext(Dispatchers.Default) {
     memScoped {
         try {
@@ -90,15 +90,17 @@ actual suspend fun downloadFile(
 
             val headRequest = NSMutableURLRequest().apply {
                 setURL(nsUrl)
-                setHTTPMethod("HEAD")
-                setValue(
-                    getUserAgent(),
-                    forHTTPHeaderField = "User-Agent"
-                )
+                setHTTPMethod("GET") // ✅ بدل HEAD
+                setValue(getUserAgent(), forHTTPHeaderField = "User-Agent")
+                setValue("bytes=0-0", forHTTPHeaderField = "Range") // ✅ نحمل أول بايت فقط
+
+                for ((key, value) in customHeaders) {
+                    setValue(value, forHTTPHeaderField = key)
+                }
             }
 
-            val headErrorPtr = alloc<ObjCObjectVar<NSError?>>()
             val headResponsePtr = alloc<ObjCObjectVar<NSURLResponse?>>()
+            val headErrorPtr = alloc<ObjCObjectVar<NSError?>>()
 
             NSURLConnection.sendSynchronousRequest(
                 request = headRequest,
@@ -106,21 +108,24 @@ actual suspend fun downloadFile(
                 error = headErrorPtr.ptr
             )
 
-            val headError = headErrorPtr.value
             val headResponse = headResponsePtr.value as? NSHTTPURLResponse
+            val statusCode = headResponse?.statusCode?.toInt() ?: -1
 
-            if (headError != null || headResponse == null || headResponse.statusCode.toInt() !in 200..299) {
-                val reason = headError?.localizedDescription ?: "Invalid response"
-                return@withContext Result.failure(Exception("Invalid URL or not reachable: $reason"))
+            if (statusCode !in 200..299) {
+                return@withContext Result.failure(Exception("❌ Server responded with $statusCode"))
             }
+
 
             val request = NSMutableURLRequest().apply {
                 setURL(nsUrl)
                 setHTTPMethod("GET")
-                setValue(
-                    getUserAgent(),
-                    forHTTPHeaderField = "User-Agent"
-                )
+                setValue(getUserAgent(), forHTTPHeaderField = "User-Agent")
+
+                // ✅ Add custom headers
+                for ((key, value) in customHeaders) {
+                    setValue(value, forHTTPHeaderField = key)
+                }
+
             }
 
             val responsePtr = alloc<ObjCObjectVar<NSURLResponse?>>()

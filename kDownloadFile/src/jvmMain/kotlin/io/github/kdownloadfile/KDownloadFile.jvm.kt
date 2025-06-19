@@ -12,34 +12,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
-//
-//actual fun saveBytes(
-//    bytes: ByteArray,
-//    fileName: String,
-//    folderName: String
-//): String {
-//    try {
-//        // Create the folder if it doesn't exist
-//        val folder = File(folderName)
-//        if (!folder.exists()) {
-//            folder.mkdirs()
-//        }
-//
-//        // Create the file object with the given folder and file name
-//        val file = File(folder, fileName)
-//
-//        // Write the bytes to the file
-//        FileOutputStream(file).use { outputStream ->
-//            outputStream.write(bytes)
-//        }
-//
-//        return file.absolutePath // Return the file path after saving
-//    } catch (e: IOException) {
-//        e.printStackTrace()
-//        return "Error saving file: ${e.message}"
-//    }
-//}
-//
 actual fun openFile(filePath: String) {
     val file = File(filePath)
     if (file.exists()) {
@@ -52,14 +24,24 @@ actual fun openFile(filePath: String) {
 actual suspend fun downloadFile(
     url: String,
     fileName: String,
-    folderName: String?
+    folderName: String?,
+    customHeaders: Map<String, String>,
 ): Result<String> {
     return withContext(Dispatchers.IO) {
         try {
             val client = HttpClient.newBuilder().build()
-            val request = HttpRequest.newBuilder()
+
+            val requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .build()
+                .GET()
+
+            // ✅ Add User-Agent
+            requestBuilder.header("User-Agent", getUserAgent())
+
+            // ✅ Add custom headers
+            for ((key, value) in customHeaders) {
+                requestBuilder.header(key, value)
+            }
 
             val downloadsDir = System.getProperty("user.home") + "/Downloads"
             val targetDir: Path = if (folderName.isNullOrBlank()) {
@@ -74,6 +56,7 @@ actual suspend fun downloadFile(
 
             val destination = targetDir.resolve(fileName)
 
+            val request = requestBuilder.build()
             val response = client.send(request, HttpResponse.BodyHandlers.ofFile(destination))
 
             if (response.statusCode() == 200) {
@@ -85,5 +68,8 @@ actual suspend fun downloadFile(
             Result.failure(e)
         }
     }
+}
 
+private fun getUserAgent(): String {
+    return System.getProperty("http.agent") ?: "KotlinJVM"
 }

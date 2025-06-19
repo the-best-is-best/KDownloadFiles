@@ -76,6 +76,7 @@ actual suspend fun downloadFile(
     url: String,
     fileName: String,
     folderName: String?,
+    customHeaders: Map<String, String>,
 ): Result<String> = withContext(Dispatchers.IO) {
     suspendCancellableCoroutine<Result<String>> { continuation ->
 
@@ -95,6 +96,10 @@ actual suspend fun downloadFile(
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(true)
                 .addRequestHeader("User-Agent", getUserAgent())
+
+            for ((key, value) in customHeaders) {
+                request.addRequestHeader(key, value)
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 request.setRequiresCharging(false)
