@@ -71,13 +71,13 @@ actual fun openFile(filePath: String) {
         Log.e("OpenFile", "❌ Error opening file: ${e::class.simpleName}: ${e.message}")
     }
 }
-
 actual suspend fun downloadFile(
     url: String,
     fileName: String,
     folderName: String?,
 ): Result<String> = withContext(Dispatchers.IO) {
-    suspendCancellableCoroutine { continuation ->
+    suspendCancellableCoroutine<Result<String>> { continuation ->
+
         val context = AndroidKDownloadFile.appContext
         val destinationPath = if (!folderName.isNullOrEmpty()) {
             "$folderName/$fileName"
@@ -93,15 +93,13 @@ actual suspend fun downloadFile(
                 .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, destinationPath)
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(true)
-                .addRequestHeader(
-                    "User-Agent",
-                    getUserAgent()
-                )
+                .addRequestHeader("User-Agent", getUserAgent())
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 request.setRequiresCharging(false)
                 request.setRequiresDeviceIdle(false)
             }
+
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             val downloadId = downloadManager.enqueue(request)
 
@@ -113,32 +111,49 @@ actual suspend fun downloadFile(
             val receiver = object : BroadcastReceiver() {
                 override fun onReceive(ctx: Context?, intent: Intent?) {
                     val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L) ?: -1L
-                    if (id == downloadId) {
-                        try {
-                            context.unregisterReceiver(this)
-                        } catch (ex: Exception) {
-                            // Ignore
-                        }
+                    if (id != downloadId) return
 
-                        val query = DownloadManager.Query().setFilterById(downloadId)
-                        val cursor = downloadManager.query(query)
+                    try {
+                        context.unregisterReceiver(this)
+                    } catch (e: Exception) {
+                        // Ignore unregister exception
+                    }
 
-                        if (cursor != null && cursor.moveToFirst()) {
-                            val status =
-                                cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
-                            if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                    val query = DownloadManager.Query().setFilterById(downloadId)
+                    val cursor = downloadManager.query(query)
+
+                    if (cursor != null && cursor.moveToFirst()) {
+                        val status =
+                            cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+                        when (status) {
+                            DownloadManager.STATUS_SUCCESSFUL -> {
                                 val uri =
                                     cursor.getString(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI))
                                 cursor.close()
-                                continuation.resume(Result.success(uri ?: ""))
-                            } else {
+                                if (continuation.isActive) {
+                                    continuation.resume(Result.success(uri ?: ""))
+                                }
+                            }
+
+                            DownloadManager.STATUS_FAILED, DownloadManager.STATUS_PAUSED, DownloadManager.STATUS_PENDING, DownloadManager.STATUS_RUNNING -> {
                                 val reason =
                                     cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON))
                                 cursor.close()
-                                continuation.resume(Result.failure(Exception("Download failed: reason $reason")))
+                                if (continuation.isActive) {
+                                    continuation.resume(Result.failure(Exception("Download failed or interrupted: status=$status reason=$reason")))
+                                }
                             }
-                        } else {
-                            cursor?.close()
+
+                            else -> {
+                                cursor.close()
+                                if (continuation.isActive) {
+                                    continuation.resume(Result.failure(Exception("Unknown download status: $status")))
+                                }
+                            }
+                        }
+                    } else {
+                        cursor?.close()
+                        if (continuation.isActive) {
                             continuation.resume(Result.failure(Exception("Cursor is empty or null.")))
                         }
                     }
@@ -156,14 +171,18 @@ actual suspend fun downloadFile(
                 try {
                     context.unregisterReceiver(receiver)
                 } catch (_: Exception) {
+                    // ignore
                 }
             }
 
         } catch (e: Exception) {
-            continuation.resume(Result.failure(e))
+            if (continuation.isActive) {
+                continuation.resume(Result.failure(e))
+            }
         }
     }
 }
+
 
 private fun getUserAgent(): String {
     val ctx = AndroidKDownloadFile.appContext
