@@ -3,16 +3,50 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		419AF3D22E072E7400F9A730 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 419AF39A2E070B9000F9A730 /* WidgetKit.framework */; };
+		419AF3D32E072E7400F9A730 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 419AF39C2E070B9000F9A730 /* SwiftUI.framework */; };
+		419AF3E02E072E7600F9A730 /* Downloader WidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 419AF3D12E072E7400F9A730 /* Downloader WidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		41EB72212E0814BE0057EB06 /* KDownloadFileInterop in Frameworks */ = {isa = PBXBuildFile; productRef = 41EB72202E0814BE0057EB06 /* KDownloadFileInterop */; };
+		41EB72262E0824F30057EB06 /* KDownloadFileInterop in Frameworks */ = {isa = PBXBuildFile; productRef = 41EB72252E0824F30057EB06 /* KDownloadFileInterop */; };
+		41EB72282E0827920057EB06 /* KDownloadFileInterop in Frameworks */ = {isa = PBXBuildFile; productRef = 41EB72272E0827920057EB06 /* KDownloadFileInterop */; };
 		A93A953B29CC810C00F8E227 /* iosApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A93A953A29CC810C00F8E227 /* iosApp.swift */; };
 		A93A953F29CC810D00F8E227 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A93A953E29CC810D00F8E227 /* Assets.xcassets */; };
 		A93A954229CC810D00F8E227 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A93A954129CC810D00F8E227 /* Preview Assets.xcassets */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		419AF3DE2E072E7600F9A730 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A93A952F29CC810C00F8E227 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 419AF3D02E072E7400F9A730;
+			remoteInfo = "Downloader WidgetExtension";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		419AF3AD2E070B9200F9A730 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				419AF3E02E072E7600F9A730 /* Downloader WidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		419AF3942E0707A400F9A730 /* iosApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iosApp.entitlements; sourceTree = "<group>"; };
+		419AF39A2E070B9000F9A730 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		419AF39C2E070B9000F9A730 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		419AF3D12E072E7400F9A730 /* Downloader WidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Downloader WidgetExtension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		41B6D0402DC76ECC0087488A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A93A953729CC810C00F8E227 /* Demo App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Demo App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A93A953A29CC810C00F8E227 /* iosApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp.swift; sourceTree = "<group>"; };
@@ -20,11 +54,37 @@
 		A93A954129CC810D00F8E227 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		419AF3E12E072E7600F9A730 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 419AF3D02E072E7400F9A730 /* Downloader WidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		419AF3D42E072E7400F9A730 /* Downloader Widget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (419AF3E12E072E7600F9A730 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = "Downloader Widget"; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
+		419AF3CE2E072E7400F9A730 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				419AF3D32E072E7400F9A730 /* SwiftUI.framework in Frameworks */,
+				41EB72282E0827920057EB06 /* KDownloadFileInterop in Frameworks */,
+				419AF3D22E072E7400F9A730 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A93A953429CC810C00F8E227 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				41EB72262E0824F30057EB06 /* KDownloadFileInterop in Frameworks */,
+				41EB72212E0814BE0057EB06 /* KDownloadFileInterop in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -35,6 +95,7 @@
 			isa = PBXGroup;
 			children = (
 				A93A953929CC810C00F8E227 /* iosApp */,
+				419AF3D42E072E7400F9A730 /* Downloader Widget */,
 				A93A953829CC810C00F8E227 /* Products */,
 				C4127409AE3703430489E7BC /* Frameworks */,
 			);
@@ -44,6 +105,7 @@
 			isa = PBXGroup;
 			children = (
 				A93A953729CC810C00F8E227 /* Demo App.app */,
+				419AF3D12E072E7400F9A730 /* Downloader WidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -51,6 +113,7 @@
 		A93A953929CC810C00F8E227 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
+				419AF3942E0707A400F9A730 /* iosApp.entitlements */,
 				A93A953A29CC810C00F8E227 /* iosApp.swift */,
 				A93A953E29CC810D00F8E227 /* Assets.xcassets */,
 				A93A954029CC810D00F8E227 /* Preview Content */,
@@ -70,6 +133,8 @@
 		C4127409AE3703430489E7BC /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				419AF39A2E070B9000F9A730 /* WidgetKit.framework */,
+				419AF39C2E070B9000F9A730 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -77,6 +142,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		419AF3D02E072E7400F9A730 /* Downloader WidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 419AF3E22E072E7600F9A730 /* Build configuration list for PBXNativeTarget "Downloader WidgetExtension" */;
+			buildPhases = (
+				419AF3CD2E072E7400F9A730 /* Sources */,
+				419AF3CE2E072E7400F9A730 /* Frameworks */,
+				419AF3CF2E072E7400F9A730 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				419AF3D42E072E7400F9A730 /* Downloader Widget */,
+			);
+			name = "Downloader WidgetExtension";
+			packageProductDependencies = (
+				41EB72272E0827920057EB06 /* KDownloadFileInterop */,
+			);
+			productName = "Downloader WidgetExtension";
+			productReference = 419AF3D12E072E7400F9A730 /* Downloader WidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		A93A953629CC810C00F8E227 /* iosApp */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A93A954529CC810D00F8E227 /* Build configuration list for PBXNativeTarget "iosApp" */;
@@ -85,10 +173,12 @@
 				A93A953329CC810C00F8E227 /* Sources */,
 				A93A953429CC810C00F8E227 /* Frameworks */,
 				A93A953529CC810C00F8E227 /* Resources */,
+				419AF3AD2E070B9200F9A730 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				419AF3DF2E072E7600F9A730 /* PBXTargetDependency */,
 			);
 			name = iosApp;
 			productName = iosApp;
@@ -101,9 +191,12 @@
 		A93A952F29CC810C00F8E227 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 1420;
+				LastSwiftUpdateCheck = 1640;
 				LastUpgradeCheck = 1420;
 				TargetAttributes = {
+					419AF3D02E072E7400F9A730 = {
+						CreatedOnToolsVersion = 16.4;
+					};
 					A93A953629CC810C00F8E227 = {
 						CreatedOnToolsVersion = 14.2;
 					};
@@ -118,16 +211,27 @@
 				Base,
 			);
 			mainGroup = A93A952E29CC810C00F8E227;
+			packageReferences = (
+				41EB72242E0824F30057EB06 /* XCRemoteSwiftPackageReference "KDownloadFileInterop" */,
+			);
 			productRefGroup = A93A953829CC810C00F8E227 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				A93A953629CC810C00F8E227 /* iosApp */,
+				419AF3D02E072E7400F9A730 /* Downloader WidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		419AF3CF2E072E7400F9A730 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A93A953529CC810C00F8E227 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -160,6 +264,13 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		419AF3CD2E072E7400F9A730 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A93A953329CC810C00F8E227 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -170,7 +281,90 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		419AF3DF2E072E7600F9A730 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 419AF3D02E072E7400F9A730 /* Downloader WidgetExtension */;
+			targetProxy = 419AF3DE2E072E7600F9A730 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		419AF3E32E072E7600F9A730 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Downloader Widget/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Downloader Widget";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "org.company.app.iosApp.Downloader-Widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		419AF3E42E072E7600F9A730 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Downloader Widget/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Downloader Widget";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "org.company.app.iosApp.Downloader-Widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 		A93A954329CC810D00F8E227 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -290,6 +484,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
@@ -299,6 +494,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -307,9 +503,13 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.company.app.iosApp;
 				PRODUCT_NAME = "Demo App";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -318,6 +518,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
@@ -327,6 +528,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -335,15 +537,28 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.company.app.iosApp;
 				PRODUCT_NAME = "Demo App";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		419AF3E22E072E7600F9A730 /* Build configuration list for PBXNativeTarget "Downloader WidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				419AF3E32E072E7600F9A730 /* Debug */,
+				419AF3E42E072E7600F9A730 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		A93A953229CC810C00F8E227 /* Build configuration list for PBXProject "iosApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -363,6 +578,43 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		41EB721F2E0814BE0057EB06 /* XCRemoteSwiftPackageReference "KDownloadFileInterop" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/the-best-is-best/KDownloadFileInterop";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.0;
+			};
+		};
+		41EB72242E0824F30057EB06 /* XCRemoteSwiftPackageReference "KDownloadFileInterop" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/the-best-is-best/KDownloadFileInterop";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = "0.1.2-rc1";
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		41EB72202E0814BE0057EB06 /* KDownloadFileInterop */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 41EB721F2E0814BE0057EB06 /* XCRemoteSwiftPackageReference "KDownloadFileInterop" */;
+			productName = KDownloadFileInterop;
+		};
+		41EB72252E0824F30057EB06 /* KDownloadFileInterop */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 41EB72242E0824F30057EB06 /* XCRemoteSwiftPackageReference "KDownloadFileInterop" */;
+			productName = KDownloadFileInterop;
+		};
+		41EB72272E0827920057EB06 /* KDownloadFileInterop */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 41EB72242E0824F30057EB06 /* XCRemoteSwiftPackageReference "KDownloadFileInterop" */;
+			productName = KDownloadFileInterop;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A93A952F29CC810C00F8E227 /* Project object */;
 }

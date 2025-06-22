@@ -1,0 +1,15 @@
+{
+  "originHash" : "7efad4b958971b496557979d5c5c55444312af426cf3b43bc4be21bfe49cb93d",
+  "pins" : [
+    {
+      "identity" : "kdownloadfileinterop",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/the-best-is-best/KDownloadFileInterop",
+      "state" : {
+        "revision" : "9e58bc57921bc8144cd5b989fdd263a2128cd8dd",
+        "version" : "0.1.2-rc1"
+      }
+    }
+  ],
+  "version" : 3
+}

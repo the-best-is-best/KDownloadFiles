@@ -1,0 +1,3 @@
+language = Objective-C
+package = io.github.native.kdownloadfile
+headers = /Users/michelleraouf/Desktop/kmm/KDownloadFiles/kDownloadFile/src/interop/libs/KDownloadFileInterop-Swift.h
