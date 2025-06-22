@@ -22,7 +22,6 @@
     <img alt="Profile" src="https://img.shields.io/badge/github-%23181717.svg?&style=for-the-badge&logo=github&logoColor=white" height="20"/>
   </a>
 </div>
-```
 
 > **KDownloadFile** is a simple yet powerful **Kotlin Multiplatform** library that enables
 downloading files over HTTP with support for custom headers, saving them locally, and opening them
