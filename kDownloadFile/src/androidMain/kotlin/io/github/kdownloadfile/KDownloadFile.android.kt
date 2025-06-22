@@ -127,7 +127,16 @@ actual suspend fun downloadFile(
         val destinationPath = listOfNotNull(folderName, fileName).joinToString("/")
         val androidConfig = configuration.android
 
+
         try {
+//            val visibility = when (androidConfig.notificationVisibility) {
+//                DownloadNotificationVisibility.Visible -> DownloadManager.Request.VISIBILITY_VISIBLE
+//                DownloadNotificationVisibility.VisibleAndNotifyCompleted -> DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+//                DownloadNotificationVisibility.NotifyOnlyOnCompletion -> DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_ONLY_COMPLETION
+//                DownloadNotificationVisibility.Hidden -> DownloadManager.Request.VISIBILITY_HIDDEN
+//
+//            }
+//
             val request = DownloadManager.Request(url.trim().toUri())
                 .setTitle(androidConfig.title)
                 .setDescription(androidConfig.description)
