@@ -1,5 +1,6 @@
 package io.github.kdownloadfile
 
+import io.github.kdownloadfile.configration.KDownloadFileConfiguration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.awt.Desktop
@@ -25,6 +26,7 @@ actual suspend fun downloadFile(
     url: String,
     fileName: String,
     folderName: String?,
+    configuration: KDownloadFileConfiguration,
     customHeaders: Map<String, String>,
 ): Result<String> {
     return withContext(Dispatchers.IO) {

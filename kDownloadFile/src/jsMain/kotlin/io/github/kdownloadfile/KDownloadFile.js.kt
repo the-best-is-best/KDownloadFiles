@@ -1,6 +1,7 @@
 package io.github.kdownloadfile
 
 
+import io.github.kdownloadfile.configration.KDownloadFileConfiguration
 import kotlinx.browser.window
 import kotlinx.coroutines.await
 import org.w3c.dom.HTMLAnchorElement
@@ -12,7 +13,8 @@ actual fun openFile(filePath: String) {
 actual suspend fun downloadFile(
     url: String,
     fileName: String,
-    folderName: String?, // Not used in browser
+    folderName: String?,
+    configuration: KDownloadFileConfiguration,
     customHeaders: Map<String, String>,
 ): Result<String> {
     return try {
