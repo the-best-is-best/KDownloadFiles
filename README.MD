@@ -24,8 +24,8 @@
 </div>
 
 > **KDownloadFile** is a simple yet powerful **Kotlin Multiplatform** library that enables
-downloading files over HTTP with support for custom headers, saving them locally, and opening them
-using the system’s default app — all while abstracting away platform-specific details.
+> downloading files over HTTP with support for custom headers, saving them locally, and opening them
+> using the system’s default app — all while abstracting away platform-specific details.
 >
 > ✅ Supports background downloads on **Android**  
 > 🍏 Supports **Live Activities** on **iOS 16.1+** to reflect download progress  
@@ -36,7 +36,7 @@ using the system’s default app — all while abstracting away platform-specifi
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.the-best-is-best/kdownload-file)](https://central.sonatype.com/artifact/io.github.the-best-is-best/kdownload-file)
 
 ```kotlin
-implementation("io.github.the-best-is-best:kdownload-file:2.2.0")
+implementation("io.github.the-best-is-best:kdownload-file:2.2.1")
 ````
 
 ## ⚙️ Android File Provider Configuration
