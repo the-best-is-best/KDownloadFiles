@@ -24,7 +24,6 @@
 </div>
 ```
 
-```md
 > **KDownloadFile** is a simple yet powerful **Kotlin Multiplatform** library that enables
 downloading files over HTTP with support for custom headers, saving them locally, and opening them
 using the system’s default app — all while abstracting away platform-specific details.
@@ -32,7 +31,6 @@ using the system’s default app — all while abstracting away platform-specifi
 > ✅ Supports background downloads on **Android**  
 > 🍏 Supports **Live Activities** on **iOS 16.1+** to reflect download progress  
 > 🌍 Built for **KMP**, with clean API and platform-safe design
-```
 
 ## 📦 Download
 
