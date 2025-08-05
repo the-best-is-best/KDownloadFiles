@@ -12,6 +12,8 @@ import java.net.http.HttpResponse
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.io.path.extension
+import kotlin.io.path.nameWithoutExtension
 
 actual fun openFile(filePath: String) {
     val file = File(filePath)
@@ -20,8 +22,8 @@ actual fun openFile(filePath: String) {
     } else {
         println("File does not exist: $filePath")
     }
-
 }
+
 actual suspend fun downloadFile(
     url: String,
     fileName: String,
@@ -37,6 +39,9 @@ actual suspend fun downloadFile(
                 .uri(URI.create(url))
                 .GET()
 
+            val saveToDownloads = configuration.saveToDownloads
+            val noDuplicateFile = configuration.noDuplicateFile
+
             // ✅ Add User-Agent
             requestBuilder.header("User-Agent", getUserAgent())
 
@@ -45,18 +50,48 @@ actual suspend fun downloadFile(
                 requestBuilder.header(key, value)
             }
 
-            val downloadsDir = System.getProperty("user.home") + "/Downloads"
-            val targetDir: Path = if (folderName.isNullOrBlank()) {
-                Paths.get(downloadsDir)
+            // نحدد المجلد الرئيسي للحفظ بناءً على قيمة saveToDownloads
+            val baseDir: Path = if (saveToDownloads) {
+                Paths.get(System.getProperty("user.home"), "Downloads")
             } else {
-                val dir = Paths.get(downloadsDir, folderName)
+                Paths.get(System.getProperty("user.home"), ".kdownloadfile")
+            }
+
+            val targetDir: Path = if (folderName.isNullOrBlank()) {
+                baseDir
+            } else {
+                val dir = baseDir.resolve(folderName)
                 if (!Files.exists(dir)) {
                     Files.createDirectories(dir)
                 }
                 dir
             }
 
-            val destination = targetDir.resolve(fileName)
+            var destination = targetDir.resolve(fileName)
+
+            // --- التعديل يبدأ هنا ---
+            if (noDuplicateFile) {
+                // الحالة: noDuplicateFile = true
+                // يتم حذف الملف القديم إذا كان موجودًا.
+                if (Files.exists(destination)) {
+                    Files.delete(destination)
+                }
+            } else {
+                // الحالة: noDuplicateFile = false
+                // يتم البحث عن اسم فريد للملف لتجنب الكتابة فوقه.
+                var counter = 1
+                var uniqueDestination = destination
+                val fileNameWithoutExtension = destination.nameWithoutExtension
+                val fileExtension = destination.extension
+
+                while (Files.exists(uniqueDestination)) {
+                    val newFileName = "${fileNameWithoutExtension} (${counter}).${fileExtension}"
+                    uniqueDestination = targetDir.resolve(newFileName)
+                    counter++
+                }
+                destination = uniqueDestination
+            }
+            // --- التعديل ينتهي هنا ---
 
             val request = requestBuilder.build()
             val response = client.send(request, HttpResponse.BodyHandlers.ofFile(destination))

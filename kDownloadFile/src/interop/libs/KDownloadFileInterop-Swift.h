@@ -34,12 +34,10 @@
 #include <new>
 #include <type_traits>
 #else
-
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <string.h>
-
 #endif
 #if defined(__cplusplus)
 #pragma clang diagnostic push
@@ -94,66 +92,66 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 # if __has_feature(objc_class_property)
 #  define SWIFT_CLASS_PROPERTY(...) __VA_ARGS__
 # else
-#  define SWIFT_CLASS_PROPERTY(...)
+#  define SWIFT_CLASS_PROPERTY(...) 
 # endif
 #endif
 #if !defined(SWIFT_RUNTIME_NAME)
 # if __has_attribute(objc_runtime_name)
 #  define SWIFT_RUNTIME_NAME(X) __attribute__((objc_runtime_name(X)))
 # else
-#  define SWIFT_RUNTIME_NAME(X)
+#  define SWIFT_RUNTIME_NAME(X) 
 # endif
 #endif
 #if !defined(SWIFT_COMPILE_NAME)
 # if __has_attribute(swift_name)
 #  define SWIFT_COMPILE_NAME(X) __attribute__((swift_name(X)))
 # else
-#  define SWIFT_COMPILE_NAME(X)
+#  define SWIFT_COMPILE_NAME(X) 
 # endif
 #endif
 #if !defined(SWIFT_METHOD_FAMILY)
 # if __has_attribute(objc_method_family)
 #  define SWIFT_METHOD_FAMILY(X) __attribute__((objc_method_family(X)))
 # else
-#  define SWIFT_METHOD_FAMILY(X)
+#  define SWIFT_METHOD_FAMILY(X) 
 # endif
 #endif
 #if !defined(SWIFT_NOESCAPE)
 # if __has_attribute(noescape)
 #  define SWIFT_NOESCAPE __attribute__((noescape))
 # else
-#  define SWIFT_NOESCAPE
+#  define SWIFT_NOESCAPE 
 # endif
 #endif
 #if !defined(SWIFT_RELEASES_ARGUMENT)
 # if __has_attribute(ns_consumed)
 #  define SWIFT_RELEASES_ARGUMENT __attribute__((ns_consumed))
 # else
-#  define SWIFT_RELEASES_ARGUMENT
+#  define SWIFT_RELEASES_ARGUMENT 
 # endif
 #endif
 #if !defined(SWIFT_WARN_UNUSED_RESULT)
 # if __has_attribute(warn_unused_result)
 #  define SWIFT_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
 # else
-#  define SWIFT_WARN_UNUSED_RESULT
+#  define SWIFT_WARN_UNUSED_RESULT 
 # endif
 #endif
 #if !defined(SWIFT_NORETURN)
 # if __has_attribute(noreturn)
 #  define SWIFT_NORETURN __attribute__((noreturn))
 # else
-#  define SWIFT_NORETURN
+#  define SWIFT_NORETURN 
 # endif
 #endif
 #if !defined(SWIFT_CLASS_EXTRA)
-# define SWIFT_CLASS_EXTRA
+# define SWIFT_CLASS_EXTRA 
 #endif
 #if !defined(SWIFT_PROTOCOL_EXTRA)
-# define SWIFT_PROTOCOL_EXTRA
+# define SWIFT_PROTOCOL_EXTRA 
 #endif
 #if !defined(SWIFT_ENUM_EXTRA)
-# define SWIFT_ENUM_EXTRA
+# define SWIFT_ENUM_EXTRA 
 #endif
 #if !defined(SWIFT_CLASS)
 # if __has_attribute(objc_subclassing_restricted)
@@ -184,14 +182,14 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 # if __has_attribute(objc_designated_initializer)
 #  define OBJC_DESIGNATED_INITIALIZER __attribute__((objc_designated_initializer))
 # else
-#  define OBJC_DESIGNATED_INITIALIZER
+#  define OBJC_DESIGNATED_INITIALIZER 
 # endif
 #endif
 #if !defined(SWIFT_ENUM_ATTR)
 # if __has_attribute(enum_extensibility)
 #  define SWIFT_ENUM_ATTR(_extensibility) __attribute__((enum_extensibility(_extensibility)))
 # else
-#  define SWIFT_ENUM_ATTR(_extensibility)
+#  define SWIFT_ENUM_ATTR(_extensibility) 
 # endif
 #endif
 #if !defined(SWIFT_ENUM)
@@ -254,7 +252,7 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 #if defined(__cplusplus)
 # define SWIFT_NOEXCEPT noexcept
 #else
-# define SWIFT_NOEXCEPT
+# define SWIFT_NOEXCEPT 
 #endif
 #if !defined(SWIFT_C_INLINE_THUNK)
 # if __has_attribute(always_inline)
@@ -273,7 +271,7 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 #endif
 #else
 #if !defined(SWIFT_IMPORT_STDLIB_SYMBOL)
-# define SWIFT_IMPORT_STDLIB_SYMBOL
+# define SWIFT_IMPORT_STDLIB_SYMBOL 
 #endif
 #endif
 #if defined(__OBJC__)
@@ -312,11 +310,12 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 @class NSURLSessionTask;
 SWIFT_CLASS("_TtC20KDownloadFileInterop22DownloadManagerInterop")
 @interface DownloadManagerInterop : NSObject <NSURLSessionDownloadDelegate>
-- (void)downloadFile:(NSString * _Nonnull)urlString fileName:(NSString * _Nonnull)fileName folderName:(NSString * _Nullable)folderName customHeaders:(NSDictionary<NSString *, NSString *> * _Nullable)customHeaders showLiveActivity:(BOOL)showLiveActivity completionHandler:(void (^ _Nonnull)(NSString * _Nullable, NSError * _Nullable))completionHandler;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+- (void)downloadFile:(NSString * _Nonnull)urlString fileName:(NSString * _Nonnull)fileName folderName:(NSString * _Nullable)folderName customHeaders:(NSDictionary<NSString *, NSString *> * _Nullable)customHeaders showLiveActivity:(BOOL)showLiveActivity saveInDownloadFolder:(BOOL)saveInDownloadFolder noDoubtableFile:(BOOL)noDoubtableFile completionHandler:(void (^ _Nonnull)(NSString * _Nullable, NSError * _Nullable))completionHandler;
 - (void)URLSession:(NSURLSession * _Nonnull)session downloadTask:(NSURLSessionDownloadTask * _Nonnull)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite;
 - (void)URLSession:(NSURLSession * _Nonnull)session downloadTask:(NSURLSessionDownloadTask * _Nonnull)downloadTask didFinishDownloadingToURL:(NSURL * _Nonnull)location;
 - (void)URLSession:(NSURLSession * _Nonnull)session task:(NSURLSessionTask * _Nonnull)task didCompleteWithError:(NSError * _Nullable)error;
-- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 SWIFT_CLASS("_TtC20KDownloadFileInterop10FileOpener")

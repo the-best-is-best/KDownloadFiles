@@ -34,6 +34,8 @@ actual suspend fun downloadFile(
                 folderName = folderName,
                 customHeaders = headersAny,
                 showLiveActivity = configuration.ios.showLiveActivity,
+                saveInDownloadFolder = configuration.saveToDownloads,
+                noDoubtableFile = configuration.noDuplicateFile,
                 completionHandler = { path, error ->
                     if (error != null) {
                         continuation.resumeWithException(Exception(error.localizedDescription))

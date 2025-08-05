@@ -54,7 +54,7 @@ internal fun App() = AppTheme {
                             folderName = "doc",
                             configuration = KDownloadFileConfiguration(
                                 saveToDownloads = true,
-                                noDuplicateFile = false,
+                                noDuplicateFile = true,
                                 android = AndroidKDownloadFileConfiguration(
                                     notificationVisibility = DownloadNotificationVisibility.VisibleAndNotifyCompleted
                                 )
