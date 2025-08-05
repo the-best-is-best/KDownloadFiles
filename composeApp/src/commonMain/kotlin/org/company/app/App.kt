@@ -17,6 +17,9 @@ import androidx.compose.ui.unit.dp
 import com.mohamedrejeb.calf.permissions.ExperimentalPermissionsApi
 import com.mohamedrejeb.calf.permissions.Permission
 import com.mohamedrejeb.calf.permissions.rememberPermissionState
+import io.github.kdownloadfile.configration.AndroidKDownloadFileConfiguration
+import io.github.kdownloadfile.configration.DownloadNotificationVisibility
+import io.github.kdownloadfile.configration.KDownloadFileConfiguration
 import io.github.kdownloadfile.downloadFile
 import io.github.kdownloadfile.openFile
 import kotlinx.coroutines.launch
@@ -48,7 +51,12 @@ internal fun App() = AppTheme {
                         val pathRes = downloadFile(
                             url = "https://research.nhm.org/pdfs/10840/10840-001.pdf",
                             fileName = "re.pdf",
-                            folderName = "doc"
+                            folderName = "doc",
+                            configuration = KDownloadFileConfiguration(
+                                android = AndroidKDownloadFileConfiguration(
+                                    notificationVisibility = DownloadNotificationVisibility.VisibleAndNotifyCompleted
+                                )
+                            )
                         )
                         println("download path $pathRes")
                         pathRes.fold(

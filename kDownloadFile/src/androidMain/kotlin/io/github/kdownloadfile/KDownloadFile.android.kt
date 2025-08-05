@@ -22,6 +22,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.HttpURLConnection
+import java.net.URI
 import java.net.URL
 import java.net.URLConnection
 import kotlin.coroutines.resume
@@ -110,13 +111,14 @@ actual suspend fun downloadFile(
     suspendCancellableCoroutine { continuation ->
 
         val context = AndroidKDownloadFile.appContext
+        val saveInDownloadFolder = configuration.saveToDownloads
+        val noDoubtableFile = configuration.noDuplicateFile
 
         // Check if device has active internet connection
         if (!isNetworkAvailable(context)) {
             continuation.resume(Result.failure(Exception("❌ No internet connection.")))
             return@suspendCancellableCoroutine
         }
-
 
         // Check if the server supports downloading this file
         if (!isDownloadableFile(url, customHeaders)) {
@@ -127,24 +129,49 @@ actual suspend fun downloadFile(
         val destinationPath = listOfNotNull(folderName, fileName).joinToString("/")
         val androidConfig = configuration.android
 
-
         try {
-//            val visibility = when (androidConfig.notificationVisibility) {
-//                DownloadNotificationVisibility.Visible -> DownloadManager.Request.VISIBILITY_VISIBLE
-//                DownloadNotificationVisibility.VisibleAndNotifyCompleted -> DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
-//                DownloadNotificationVisibility.NotifyOnlyOnCompletion -> DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_ONLY_COMPLETION
-//                DownloadNotificationVisibility.Hidden -> DownloadManager.Request.VISIBILITY_HIDDEN
-//
-//            }
-//
+            // Check if the file already exists and delete it if noDoubtableFile is true
+            if (noDoubtableFile) {
+                val fileToDelete = if (saveInDownloadFolder) {
+                    File(
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                        destinationPath
+                    )
+                } else {
+                    // Check in the app's cache directory
+                    File(context.cacheDir, destinationPath)
+                }
+
+                if (fileToDelete.exists()) {
+                    val deleted = fileToDelete.delete()
+                    if (deleted) {
+                        println("✅ Old file deleted successfully: ${fileToDelete.absolutePath}")
+                    } else {
+                        println("⚠️ Failed to delete old file: ${fileToDelete.absolutePath}")
+                    }
+                }
+            }
+
             val request = DownloadManager.Request(url.trim().toUri())
                 .setTitle(androidConfig.title)
                 .setDescription(androidConfig.description)
                 .setNotificationVisibility(androidConfig.notificationVisibility.rawValue)
-                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, destinationPath)
-                .setAllowedOverMetered(true)
-                .setAllowedOverRoaming(true)
-                .addRequestHeader("User-Agent", getUserAgent())
+
+            // Set the destination based on the saveInDownloadFolder configuration
+            if (saveInDownloadFolder) {
+                request.setDestinationInExternalPublicDir(
+                    Environment.DIRECTORY_DOWNLOADS,
+                    destinationPath
+                )
+            } else {
+                // The DownloadManager doesn't have a direct way to save to cache,
+                // so we'll save it to a temporary app-specific folder
+                request.setDestinationInExternalFilesDir(context, "cache_temp", fileName)
+            }
+
+            request.setAllowedOverMetered(true)
+            request.setAllowedOverRoaming(true)
+            request.addRequestHeader("User-Agent", getUserAgent())
 
             // Add custom headers if provided
             for ((key, value) in customHeaders) {
@@ -187,8 +214,30 @@ actual suspend fun downloadFile(
                                 val uri =
                                     cursor.getString(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI))
                                 cursor.close()
+
                                 if (continuation.isActive) {
-                                    continuation.resume(Result.success(uri ?: ""))
+                                    // Handle moving the file to the cache directory after download completes
+                                    if (!saveInDownloadFolder) {
+                                        val downloadedFile = File(URI.create(uri).path)
+                                        val destinationFile =
+                                            File(context.cacheDir, destinationPath)
+                                        val parentDir = destinationFile.parentFile
+                                        if (parentDir?.exists() == false) {
+                                            parentDir.mkdirs()
+                                        }
+
+                                        if (downloadedFile.renameTo(destinationFile)) {
+                                            continuation.resume(
+                                                Result.success(
+                                                    destinationFile.toURI().toString()
+                                                )
+                                            )
+                                        } else {
+                                            continuation.resume(Result.failure(Exception("❌ Failed to move file to cache.")))
+                                        }
+                                    } else {
+                                        continuation.resume(Result.success(uri ?: ""))
+                                    }
                                 }
                             }
 

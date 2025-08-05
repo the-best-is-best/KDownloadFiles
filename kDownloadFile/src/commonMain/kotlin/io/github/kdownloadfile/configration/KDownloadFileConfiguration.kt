@@ -9,6 +9,8 @@ enum class DownloadNotificationVisibility(val rawValue: Int) {
 
 
 data class KDownloadFileConfiguration(
+    val noDuplicateFile: Boolean = true,
+    val saveToDownloads: Boolean = true,
     val android: AndroidKDownloadFileConfiguration = AndroidKDownloadFileConfiguration(),
     val ios: IosKDownloadFileConfiguration = IosKDownloadFileConfiguration(),
 )
