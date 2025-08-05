@@ -39,6 +39,12 @@
 implementation("io.github.the-best-is-best:kdownload-file:2.2.1")
 ````
 
+
+## If used version 2.3.0-rc1
+
+* need use version 0.2.0-rc2 of KDownloadFileInterop
+
+
 ## ⚙️ Android File Provider Configuration
 
 To ensure proper file access and sharing in Android, follow these steps:
