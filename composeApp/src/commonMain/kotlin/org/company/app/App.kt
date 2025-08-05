@@ -49,10 +49,12 @@ internal fun App() = AppTheme {
             onClick = {
                 scope.launch {
                         val pathRes = downloadFile(
-                            url = "https://research.nhm.org/pdfs/10840/10840-001.pdf",
+                            url = "https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf",
                             fileName = "re.pdf",
                             folderName = "doc",
                             configuration = KDownloadFileConfiguration(
+                                saveToDownloads = true,
+                                noDuplicateFile = false,
                                 android = AndroidKDownloadFileConfiguration(
                                     notificationVisibility = DownloadNotificationVisibility.VisibleAndNotifyCompleted
                                 )

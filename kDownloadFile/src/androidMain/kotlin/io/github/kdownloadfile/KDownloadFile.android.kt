@@ -12,6 +12,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.util.Log
+import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -21,86 +22,83 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URL
 import java.net.URLConnection
 import kotlin.coroutines.resume
 
+
+/**
+ * Opens a downloaded file using a viewer application.
+ *
+ * This function handles files from both public storage (e.g., Downloads) and the app's cache directory.
+ * It uses `FileProvider` to create a secure content URI, preventing `FileUriExposedException`
+ * on modern Android versions.
+ *
+ * @param filePath The absolute path of the file to open. This should be a clean path string, not a `file://` URI.
+ */
 actual fun openFile(filePath: String) {
     val context = AndroidKDownloadFile.appContext
-    val externalStoragePath = Environment.getExternalStorageDirectory().path
 
-    val file: File? = when {
-        filePath.startsWith("content://") -> null
-        filePath.startsWith("file://") -> File(filePath.toUri().path ?: "")
-        filePath.startsWith("/storage/emulated/0/Android/data/${context.packageName}/") -> File(
-            filePath
-        )
+    // Create the File object from the absolute path.
+    val file = File(filePath)
 
-        filePath.startsWith("/storage/emulated/") || filePath.startsWith(externalStoragePath) -> File(
-            filePath
-        )
-        else -> File(context.getExternalFilesDir(null), filePath)
-    }
-
-    if (file != null && !file.exists()) {
+    if (!file.exists()) {
         Log.e("OpenFile", "❌ File does not exist: ${file.absolutePath}")
+        Toast.makeText(context, "File does not exist.", Toast.LENGTH_SHORT).show()
         return
     }
 
     val uri: Uri = try {
-        if (file != null) {
-            FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
-        } else if (filePath.startsWith("content://")) {
-            filePath.toUri()
-        } else {
-            throw IllegalArgumentException("Unsupported file path or URI: $filePath")
-        }
+        // Use FileProvider for a secure URI. This is the correct and only way
+        // to share files with other apps on modern Android.
+        FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
     } catch (e: Exception) {
         e.printStackTrace()
         Log.e("OpenFile", "❌ Error getting URI: ${e.message}")
+        Toast.makeText(context, "Cannot open file due to URI error", Toast.LENGTH_SHORT).show()
         return
     }
 
-    val mimeType = when {
-        file != null -> getMimeType(file)
-        else -> context.contentResolver.getType(uri) ?: "application/octet-stream"
-    }
+    // Get the MIME type of the file.
+    val mimeType = getMimeType(file)
 
     val viewIntent = Intent(Intent.ACTION_VIEW).apply {
         setDataAndType(uri, mimeType)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
     }
 
     try {
+        // Use a chooser to let the user select the app to open the file.
         val chooser = Intent.createChooser(viewIntent, "Open with").apply {
+            // This flag is crucial for starting an activity from a non-Activity context.
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(chooser)
     } catch (e: ActivityNotFoundException) {
         Toast.makeText(context, "No app found to open this file type", Toast.LENGTH_SHORT).show()
-        Log.e("OpenFile", "❌ No Activity found to handle file: ${file?.name}")
+        Log.e("OpenFile", "❌ No Activity found to handle file: ${file.name}")
     } catch (e: Exception) {
         e.printStackTrace()
         Log.e("OpenFile", "❌ Error opening file: ${e::class.simpleName}: ${e.message}")
     }
 }
 
-private fun getMimeType(file: File): String {
-    return when (file.extension.lowercase()) {
-        "pdf" -> "application/pdf"
-        "doc", "docx" -> "application/msword"
-        "xls", "xlsx" -> "application/vnd.ms-excel"
-        "ppt", "pptx" -> "application/vnd.ms-powerpoint"
-        "txt" -> "text/plain"
-        "jpg", "jpeg" -> "image/jpeg"
-        "png" -> "image/png"
-        "mp4" -> "video/mp4"
-        else -> URLConnection.guessContentTypeFromName(file.name) ?: "application/octet-stream"
-    }
-}
-
+/**
+ * Downloads a file to the specified location (public downloads or app cache).
+ *
+ * This function uses the `DownloadManager` for robust, background downloads.
+ * It handles the movement of files to the cache directory and correctly returns
+ * the absolute path of the final file location.
+ *
+ * @return A `Result<String>` containing the absolute path of the downloaded file on success,
+ * or an `Exception` on failure.
+ */
 actual suspend fun downloadFile(
     url: String,
     fileName: String,
@@ -114,13 +112,11 @@ actual suspend fun downloadFile(
         val saveInDownloadFolder = configuration.saveToDownloads
         val noDoubtableFile = configuration.noDuplicateFile
 
-        // Check if device has active internet connection
         if (!isNetworkAvailable(context)) {
             continuation.resume(Result.failure(Exception("❌ No internet connection.")))
             return@suspendCancellableCoroutine
         }
 
-        // Check if the server supports downloading this file
         if (!isDownloadableFile(url, customHeaders)) {
             continuation.resume(Result.failure(Exception("❌ File is not downloadable from server.")))
             return@suspendCancellableCoroutine
@@ -130,7 +126,6 @@ actual suspend fun downloadFile(
         val androidConfig = configuration.android
 
         try {
-            // Check if the file already exists and delete it if noDoubtableFile is true
             if (noDoubtableFile) {
                 val fileToDelete = if (saveInDownloadFolder) {
                     File(
@@ -138,7 +133,6 @@ actual suspend fun downloadFile(
                         destinationPath
                     )
                 } else {
-                    // Check in the app's cache directory
                     File(context.cacheDir, destinationPath)
                 }
 
@@ -157,15 +151,13 @@ actual suspend fun downloadFile(
                 .setDescription(androidConfig.description)
                 .setNotificationVisibility(androidConfig.notificationVisibility.rawValue)
 
-            // Set the destination based on the saveInDownloadFolder configuration
             if (saveInDownloadFolder) {
                 request.setDestinationInExternalPublicDir(
                     Environment.DIRECTORY_DOWNLOADS,
                     destinationPath
                 )
             } else {
-                // The DownloadManager doesn't have a direct way to save to cache,
-                // so we'll save it to a temporary app-specific folder
+                // Download to a temporary app-specific folder first, then move it to cache.
                 request.setDestinationInExternalFilesDir(context, "cache_temp", fileName)
             }
 
@@ -173,12 +165,10 @@ actual suspend fun downloadFile(
             request.setAllowedOverRoaming(true)
             request.addRequestHeader("User-Agent", getUserAgent())
 
-            // Add custom headers if provided
             for ((key, value) in customHeaders) {
                 request.addRequestHeader(key, value)
             }
 
-            // Optional constraints for newer Android versions
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 request.setRequiresCharging(false)
                 request.setRequiresDeviceIdle(false)
@@ -192,7 +182,6 @@ actual suspend fun downloadFile(
                 return@suspendCancellableCoroutine
             }
 
-            // Listen for the download complete broadcast
             val receiver = object : BroadcastReceiver() {
                 override fun onReceive(ctx: Context?, intent: Intent?) {
                     val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L) ?: -1L
@@ -206,67 +195,72 @@ actual suspend fun downloadFile(
                     val query = DownloadManager.Query().setFilterById(downloadId)
                     val cursor = downloadManager.query(query)
 
-                    if (cursor != null && cursor.moveToFirst()) {
-                        val status =
-                            cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
-                        when (status) {
-                            DownloadManager.STATUS_SUCCESSFUL -> {
-                                val uri =
-                                    cursor.getString(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI))
-                                cursor.close()
+                    try {
+                        if (cursor != null && cursor.moveToFirst()) {
+                            val status =
+                                cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+                            val reason =
+                                cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON))
+                            val localUriString =
+                                cursor.getString(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI))
 
-                                if (continuation.isActive) {
-                                    // Handle moving the file to the cache directory after download completes
-                                    if (!saveInDownloadFolder) {
-                                        val downloadedFile = File(URI.create(uri).path)
-                                        val destinationFile =
-                                            File(context.cacheDir, destinationPath)
-                                        val parentDir = destinationFile.parentFile
-                                        if (parentDir?.exists() == false) {
-                                            parentDir.mkdirs()
-                                        }
+                            when (status) {
+                                DownloadManager.STATUS_SUCCESSFUL -> {
+                                    if (continuation.isActive) {
+                                        if (!saveInDownloadFolder) {
+                                            val downloadedFile =
+                                                File(URI.create(localUriString).path)
+                                            val destinationFile =
+                                                File(context.cacheDir, destinationPath)
 
-                                        if (downloadedFile.renameTo(destinationFile)) {
-                                            continuation.resume(
-                                                Result.success(
-                                                    destinationFile.toURI().toString()
-                                                )
-                                            )
+                                            val parentDir = destinationFile.parentFile
+                                            if (parentDir?.exists() == false) {
+                                                parentDir.mkdirs()
+                                            }
+
+                                            val success = copyFile(downloadedFile, destinationFile)
+                                            if (success) {
+                                                downloadedFile.delete()
+                                                continuation.resume(Result.success(destinationFile.absolutePath))
+                                            } else {
+                                                continuation.resume(Result.failure(Exception("❌ Failed to move file to cache.")))
+                                            }
                                         } else {
-                                            continuation.resume(Result.failure(Exception("❌ Failed to move file to cache.")))
+                                            val file = File(URI.create(localUriString).path)
+                                            continuation.resume(Result.success(file.absolutePath))
                                         }
-                                    } else {
-                                        continuation.resume(Result.success(uri ?: ""))
+                                    }
+                                }
+
+                                DownloadManager.STATUS_FAILED -> {
+                                    if (continuation.isActive) {
+                                        continuation.resume(Result.failure(Exception("❌ Download failed (reason=$reason)")))
+                                    }
+                                }
+
+                                else -> {
+                                    if (continuation.isActive) {
+                                        continuation.resume(Result.failure(Exception("❌ Unexpected download status: $status")))
                                     }
                                 }
                             }
-
-                            DownloadManager.STATUS_FAILED -> {
-                                val reason =
-                                    cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON))
-                                cursor.close()
-                                if (continuation.isActive) {
-                                    continuation.resume(Result.failure(Exception("❌ Download failed (reason=$reason)")))
-                                }
-                            }
-
-                            else -> {
-                                cursor.close()
-                                if (continuation.isActive) {
-                                    continuation.resume(Result.failure(Exception("❌ Unexpected download status: $status")))
-                                }
+                        } else {
+                            if (continuation.isActive) {
+                                continuation.resume(Result.failure(Exception("❌ Failed to access download status.")))
                             }
                         }
-                    } else {
-                        cursor?.close()
+                    } catch (e: Exception) {
+                        Log.e("KDownloadFile", "Error in receiver processing", e)
                         if (continuation.isActive) {
-                            continuation.resume(Result.failure(Exception("❌ Failed to access download status.")))
+                            continuation.resume(Result.failure(Exception("❌ Error processing download result: ${e.message}")))
                         }
+                    } finally {
+                        // Crucial fix: The cursor must be closed only after all data has been read.
+                        cursor?.close()
                     }
                 }
             }
 
-            // Register the broadcast receiver for download complete
             ContextCompat.registerReceiver(
                 context,
                 receiver,
@@ -274,7 +268,6 @@ actual suspend fun downloadFile(
                 ContextCompat.RECEIVER_EXPORTED
             )
 
-            // Cleanup on coroutine cancellation
             continuation.invokeOnCancellation {
                 try {
                     context.unregisterReceiver(receiver)
@@ -290,18 +283,40 @@ actual suspend fun downloadFile(
     }
 }
 
+// Helper function to determine the MIME type of a file
+private fun getMimeType(file: File): String {
+    val extension = file.extension.lowercase()
+    return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+        ?: URLConnection.guessContentTypeFromName(file.name)
+        ?: "application/octet-stream"
+}
+
+// Helper function to robustly copy a file
+private fun copyFile(sourceFile: File, destFile: File): Boolean {
+    return try {
+        FileInputStream(sourceFile).channel.use { source ->
+            FileOutputStream(destFile).channel.use { dest ->
+                dest.transferFrom(source, 0, source.size())
+            }
+        }
+        true
+    } catch (e: IOException) {
+        Log.e("KDownloadFile", "❌ Error copying file: ${e.message}", e)
+        false
+    }
+}
+
+// Helper to check if a file is downloadable by checking the HTTP headers
 private fun isDownloadableFile(url: String, customHeaders: Map<String, String>?): Boolean {
     return try {
         val connection = URL(url).openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
-        connection.setRequestProperty("Range", "bytes=0-0") // safer than HEAD
+        connection.setRequestProperty("Range", "bytes=0-0")
         connection.connectTimeout = 5000
         connection.readTimeout = 5000
-
         customHeaders?.forEach { (key, value) ->
             connection.setRequestProperty(key, value)
         }
-
         connection.connect()
         val code = connection.responseCode
         connection.disconnect()
@@ -309,13 +324,12 @@ private fun isDownloadableFile(url: String, customHeaders: Map<String, String>?)
     } catch (e: Exception) {
         false
     }
-
 }
 
+// Helper to check for network connectivity
 private fun isNetworkAvailable(context: Context): Boolean {
     val connectivityManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         val network = connectivityManager.activeNetwork ?: return false
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
@@ -329,21 +343,16 @@ private fun isNetworkAvailable(context: Context): Boolean {
     }
 }
 
-
+// Helper to generate a custom User-Agent string
 private fun getUserAgent(): String {
     val ctx = AndroidKDownloadFile.appContext
     val packageInfo = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
     val appName = ctx.applicationInfo.loadLabel(ctx.packageManager).toString()
     val version = packageInfo.versionName ?: "1.0"
-
     val model = Build.MODEL ?: "Unknown"
     val manufacturer = Build.MANUFACTURER ?: "Unknown"
     val osVersion = Build.VERSION.RELEASE ?: "Unknown"
     val sdkInt = Build.VERSION.SDK_INT
-
     return "$appName/$version " +
             "(Android; $manufacturer $model; Android $osVersion SDK $sdkInt)"
-
 }
-
-
