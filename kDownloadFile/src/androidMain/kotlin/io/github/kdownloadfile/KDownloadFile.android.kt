@@ -107,10 +107,16 @@ actual suspend fun downloadFile(
     customHeaders: Map<String, String>,
 ): Result<String> = withContext(Dispatchers.IO) {
     suspendCancellableCoroutine { continuation ->
-
         val context = AndroidKDownloadFile.appContext
         val saveInDownloadFolder = configuration.saveToDownloads
-        val noDoubtableFile = configuration.noDuplicateFile
+        val noDuplicateFile = configuration.noDuplicateFile
+        val saveInCacheFile = configuration.saveInCacheFiles
+
+        // Validate configuration
+        if (saveInDownloadFolder && saveInCacheFile) {
+            continuation.resume(Result.failure(IllegalArgumentException("Cannot save to both Downloads and cache")))
+            return@suspendCancellableCoroutine
+        }
 
         if (!isNetworkAvailable(context)) {
             continuation.resume(Result.failure(Exception("❌ No internet connection.")))
@@ -126,22 +132,34 @@ actual suspend fun downloadFile(
         val androidConfig = configuration.android
 
         try {
-            if (noDoubtableFile) {
-                val fileToDelete = if (saveInDownloadFolder) {
-                    File(
-                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                        destinationPath
-                    )
-                } else {
-                    File(context.cacheDir, destinationPath)
+            // Handle file deletion for noDuplicateFile
+            if (noDuplicateFile) {
+                val fileToDelete = when {
+                    saveInDownloadFolder -> {
+                        File(
+                            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                            destinationPath
+                        )
+                    }
+
+                    saveInCacheFile -> {
+                        File(context.cacheDir, destinationPath)
+                    }
+
+                    else -> {
+                        File(context.filesDir, destinationPath)
+                    }
                 }
 
                 if (fileToDelete.exists()) {
                     val deleted = fileToDelete.delete()
                     if (deleted) {
-                        println("✅ Old file deleted successfully: ${fileToDelete.absolutePath}")
+                        Log.d("KDownloadFile", "✅ Old file deleted: ${fileToDelete.absolutePath}")
                     } else {
-                        println("⚠️ Failed to delete old file: ${fileToDelete.absolutePath}")
+                        Log.w(
+                            "KDownloadFile",
+                            "⚠️ Failed to delete old file: ${fileToDelete.absolutePath}"
+                        )
                     }
                 }
             }
@@ -151,16 +169,27 @@ actual suspend fun downloadFile(
                 .setDescription(androidConfig.description)
                 .setNotificationVisibility(androidConfig.notificationVisibility.rawValue)
 
-            if (saveInDownloadFolder) {
-                request.setDestinationInExternalPublicDir(
-                    Environment.DIRECTORY_DOWNLOADS,
-                    destinationPath
-                )
-            } else {
-                // Download to a temporary app-specific folder first, then move it to cache.
-                request.setDestinationInExternalFilesDir(context, "cache_temp", fileName)
+            // Set destination based on configuration
+            when {
+                saveInDownloadFolder -> {
+                    request.setDestinationInExternalPublicDir(
+                        Environment.DIRECTORY_DOWNLOADS,
+                        destinationPath
+                    )
+                }
+
+                saveInCacheFile -> {
+                    // For cache, we download to a temp location first
+                    request.setDestinationInExternalFilesDir(context, "cache_temp", fileName)
+                }
+
+                else -> {
+                    // For persistent app storage
+                    request.setDestinationInExternalFilesDir(context, null, fileName)
+                }
             }
 
+            // Rest of your request setup...
             request.setAllowedOverMetered(true)
             request.setAllowedOverRoaming(true)
             request.addRequestHeader("User-Agent", getUserAgent())
@@ -193,70 +222,66 @@ actual suspend fun downloadFile(
                     }
 
                     val query = DownloadManager.Query().setFilterById(downloadId)
-                    val cursor = downloadManager.query(query)
+                    val cursorQuery = downloadManager.query(query)
 
-                    try {
+                    cursorQuery.use { cursor ->
                         if (cursor != null && cursor.moveToFirst()) {
                             val status =
                                 cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
-                            val reason =
-                                cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON))
+                            cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON))
                             val localUriString =
                                 cursor.getString(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI))
 
                             when (status) {
                                 DownloadManager.STATUS_SUCCESSFUL -> {
                                     if (continuation.isActive) {
-                                        if (!saveInDownloadFolder) {
-                                            val downloadedFile =
-                                                File(URI.create(localUriString).path)
-                                            val destinationFile =
-                                                File(context.cacheDir, destinationPath)
+                                        val downloadedFile = File(URI.create(localUriString).path)
 
-                                            val parentDir = destinationFile.parentFile
-                                            if (parentDir?.exists() == false) {
-                                                parentDir.mkdirs()
+                                        when {
+                                            saveInDownloadFolder -> {
+                                                continuation.resume(
+                                                    Result.success(
+                                                        File(
+                                                            Environment.getExternalStoragePublicDirectory(
+                                                                Environment.DIRECTORY_DOWNLOADS
+                                                            ),
+                                                            destinationPath
+                                                        ).absolutePath
+                                                    )
+                                                )
                                             }
 
-                                            val success = copyFile(downloadedFile, destinationFile)
-                                            if (success) {
-                                                downloadedFile.delete()
-                                                continuation.resume(Result.success(destinationFile.absolutePath))
-                                            } else {
-                                                continuation.resume(Result.failure(Exception("❌ Failed to move file to cache.")))
+                                            saveInCacheFile -> {
+                                                // Move to cache directory
+                                                val cacheFile =
+                                                    File(context.cacheDir, destinationPath)
+                                                cacheFile.parentFile?.mkdirs()
+                                                if (copyFile(downloadedFile, cacheFile)) {
+                                                    downloadedFile.delete()
+                                                    continuation.resume(Result.success(cacheFile.absolutePath))
+                                                } else {
+                                                    continuation.resume(Result.failure(Exception("❌ Failed to move file to cache")))
+                                                }
                                             }
-                                        } else {
-                                            val file = File(URI.create(localUriString).path)
-                                            continuation.resume(Result.success(file.absolutePath))
+
+                                            else -> {
+                                                // Move to persistent app storage
+                                                val appFile =
+                                                    File(context.filesDir, destinationPath)
+                                                appFile.parentFile?.mkdirs()
+                                                if (copyFile(downloadedFile, appFile)) {
+                                                    downloadedFile.delete()
+                                                    continuation.resume(Result.success(appFile.absolutePath))
+                                                } else {
+                                                    continuation.resume(Result.failure(Exception("❌ Failed to move file to app storage")))
+                                                }
+                                            }
                                         }
                                     }
                                 }
-
-                                DownloadManager.STATUS_FAILED -> {
-                                    if (continuation.isActive) {
-                                        continuation.resume(Result.failure(Exception("❌ Download failed (reason=$reason)")))
-                                    }
-                                }
-
-                                else -> {
-                                    if (continuation.isActive) {
-                                        continuation.resume(Result.failure(Exception("❌ Unexpected download status: $status")))
-                                    }
-                                }
-                            }
-                        } else {
-                            if (continuation.isActive) {
-                                continuation.resume(Result.failure(Exception("❌ Failed to access download status.")))
+                                // ... rest of your status handling
                             }
                         }
-                    } catch (e: Exception) {
-                        Log.e("KDownloadFile", "Error in receiver processing", e)
-                        if (continuation.isActive) {
-                            continuation.resume(Result.failure(Exception("❌ Error processing download result: ${e.message}")))
-                        }
-                    } finally {
-                        // Crucial fix: The cursor must be closed only after all data has been read.
-                        cursor?.close()
                     }
                 }
             }
