@@ -10,27 +10,13 @@ enum class DownloadNotificationVisibility(val rawValue: Int) {
 data class KDownloadFileConfiguration(
     val noDuplicateFile: Boolean = true,
     val saveToDownloads: Boolean = true,
+    val saveInCacheFiles: Boolean = false,
     val android: AndroidKDownloadFileConfiguration = AndroidKDownloadFileConfiguration(),
     val ios: IosKDownloadFileConfiguration = IosKDownloadFileConfiguration()
 ) {
-    // Only visible when saveToDownloads is false
-    val saveInCacheFiles: Boolean by lazy {
-        if (saveToDownloads) {
-            throw IllegalStateException("saveInCacheFiles is only available when saveToDownloads is false")
-        }
-        false // Default value when saveToDownloads is false
-    }
-
-    // Secondary constructor for when saveToDownloads is false
-    constructor(
-        noDuplicateFile: Boolean = true,
-        saveToDownloads: Boolean = false,
-        saveInCacheFiles: Boolean = false,
-        android: AndroidKDownloadFileConfiguration = AndroidKDownloadFileConfiguration(),
-        ios: IosKDownloadFileConfiguration = IosKDownloadFileConfiguration()
-    ) : this(noDuplicateFile, saveToDownloads, android, ios) {
-        if (saveToDownloads) {
-            throw IllegalArgumentException("saveInCacheFiles can only be set when saveToDownloads is false")
+    init {
+        if (saveToDownloads && saveInCacheFiles) {
+            throw IllegalArgumentException("Cannot save to both Downloads and cache files")
         }
     }
 }

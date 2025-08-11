@@ -307,15 +307,12 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 @class NSURLSession;
 @class NSURLSessionDownloadTask;
 @class NSURL;
-@class NSURLSessionTask;
 SWIFT_CLASS("_TtC20KDownloadFileInterop22DownloadManagerInterop")
 @interface DownloadManagerInterop : NSObject <NSURLSessionDownloadDelegate>
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
-- (void)downloadFile:(NSString * _Nonnull)urlString fileName:(NSString * _Nonnull)fileName folderName:(NSString * _Nullable)folderName customHeaders:(NSDictionary<NSString *, NSString *> * _Nullable)customHeaders showLiveActivity:(BOOL)showLiveActivity saveInDownloadFolder:(BOOL)saveInDownloadFolder noDoubtableFile:(BOOL)noDoubtableFile completionHandler:(void (^ _Nonnull)(NSString * _Nullable, NSError * _Nullable))completionHandler;
-- (void)URLSession:(NSURLSession * _Nonnull)session downloadTask:(NSURLSessionDownloadTask * _Nonnull)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite;
+- (void)downloadFile:(NSString * _Nonnull)urlString fileName:(NSString * _Nonnull)fileName folderName:(NSString * _Nullable)folderName customHeaders:(NSDictionary<NSString *, NSString *> * _Nullable)customHeaders saveToDownloads:(BOOL)saveToDownloads saveInCacheFiles:(BOOL)saveInCacheFiles noDuplicateFile:(BOOL)noDuplicateFile showLiveActivity:(BOOL)showLiveActivity completionHandler:(void (^ _Nonnull)(NSString * _Nullable, NSError * _Nullable))completionHandler;
 - (void)URLSession:(NSURLSession * _Nonnull)session downloadTask:(NSURLSessionDownloadTask * _Nonnull)downloadTask didFinishDownloadingToURL:(NSURL * _Nonnull)location;
-- (void)URLSession:(NSURLSession * _Nonnull)session task:(NSURLSessionTask * _Nonnull)task didCompleteWithError:(NSError * _Nullable)error;
 @end
 
 SWIFT_CLASS("_TtC20KDownloadFileInterop10FileOpener")

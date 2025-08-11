@@ -141,25 +141,38 @@ actual suspend fun downloadFile(
                             destinationPath
                         )
                     }
-
-                    saveInCacheFile -> {
-                        File(context.cacheDir, destinationPath)
-                    }
-
-                    else -> {
-                        File(context.filesDir, destinationPath)
-                    }
+                    saveInCacheFile -> File(context.cacheDir, destinationPath)
+                    else -> File(context.filesDir, destinationPath)
                 }
 
                 if (fileToDelete.exists()) {
-                    val deleted = fileToDelete.delete()
-                    if (deleted) {
-                        Log.d("KDownloadFile", "✅ Old file deleted: ${fileToDelete.absolutePath}")
-                    } else {
-                        Log.w(
-                            "KDownloadFile",
-                            "⚠️ Failed to delete old file: ${fileToDelete.absolutePath}"
-                        )
+                    // 1. First try normal deletion
+                    var deleted = fileToDelete.delete()
+
+                    // 2. If failed, force deletion
+                    if (!deleted) {
+                        try {
+                            // Clear file contents first
+                            FileOutputStream(fileToDelete).use { fos ->
+                                fos.channel.truncate(0)
+                                fos.fd.sync() // Force sync to disk
+                            }
+                            deleted = fileToDelete.delete()
+                        } catch (e: Exception) {
+                            Log.e("KDownloadFile", "⚠️ Force deletion failed: ${e.message}")
+                        }
+                    }
+
+                    // 3. Final verification
+                    when {
+                        deleted && !fileToDelete.exists() ->
+                            Log.d("KDownloadFile", "✅ Deleted: ${fileToDelete.absolutePath}")
+
+                        fileToDelete.exists() ->
+                            Log.w("KDownloadFile", "💥 STILL EXISTS: ${fileToDelete.absolutePath}")
+
+                        else ->
+                            Log.w("KDownloadFile", "⚠️ Deletion status unclear")
                     }
                 }
             }
