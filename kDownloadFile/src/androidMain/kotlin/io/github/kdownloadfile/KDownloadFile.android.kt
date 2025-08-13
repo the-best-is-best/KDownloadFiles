@@ -93,7 +93,12 @@ actual suspend fun downloadFile(
             return@suspendCancellableCoroutine
         }
 
-        val destinationPath = listOfNotNull(folderName, fileName).joinToString("/")
+        val appName = getAppName()
+        val destinationPath = if (saveInDownloadFolder) {
+            listOfNotNull(appName, folderName, fileName).joinToString("/")
+        } else {
+            listOfNotNull(folderName, fileName).joinToString("/")
+        }
 
         try {
             if (noDuplicateFile) {
@@ -102,7 +107,6 @@ actual suspend fun downloadFile(
                         Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
                         destinationPath
                     )
-
                     saveInCacheFile -> File(context.cacheDir, destinationPath)
                     else -> File(context.filesDir, destinationPath)
                 }
@@ -117,6 +121,7 @@ actual suspend fun downloadFile(
                             }
                             deleted = fileToDelete.delete()
                         } catch (e: Exception) {
+                            continuation.resume(Result.failure(e))
                             Log.e("KDownloadFile", "⚠️ Force deletion failed: ${e.message}")
                         }
                     }
@@ -139,13 +144,11 @@ actual suspend fun downloadFile(
                     Environment.DIRECTORY_DOWNLOADS,
                     destinationPath
                 )
-
                 saveInCacheFile -> request.setDestinationInExternalFilesDir(
                     context,
                     "cache_temp",
                     fileName
                 )
-
                 else -> request.setDestinationInExternalFilesDir(context, null, fileName)
             }
 
@@ -196,12 +199,10 @@ actual suspend fun downloadFile(
                                                     Environment.DIRECTORY_DOWNLOADS
                                                 ), destinationPath
                                             )
-
                                             saveInCacheFile -> File(
                                                 context.cacheDir,
                                                 destinationPath
                                             )
-
                                             else -> File(context.filesDir, destinationPath)
                                         }
 
@@ -215,12 +216,11 @@ actual suspend fun downloadFile(
                                         if (success) {
                                             if (destFile != downloadedFile) downloadedFile.delete()
                                             continuation.resume(Result.success(destFile.absolutePath))
-                                                } else {
+                                        } else {
                                             continuation.resume(Result.failure(Exception("❌ Failed to move downloaded file")))
                                         }
                                     }
                                 }
-
                                 DownloadManager.STATUS_FAILED -> {
                                     if (continuation.isActive) continuation.resume(
                                         Result.failure(
@@ -228,7 +228,6 @@ actual suspend fun downloadFile(
                                         )
                                     )
                                 }
-
                                 else -> {
                                     if (continuation.isActive) continuation.resume(
                                         Result.failure(
@@ -239,11 +238,7 @@ actual suspend fun downloadFile(
                             }
                         } else {
                             if (continuation.isActive) continuation.resume(
-                                Result.failure(
-                                    Exception(
-                                        "❌ DownloadManager cursor empty"
-                                    )
-                                )
+                                Result.failure(Exception("❌ DownloadManager cursor empty"))
                             )
                         }
                     }
@@ -268,6 +263,7 @@ actual suspend fun downloadFile(
         }
     }
 }
+
 
 // Helper functions
 
@@ -334,4 +330,16 @@ private fun getUserAgent(): String {
     val osVer = Build.VERSION.RELEASE ?: "Unknown"
     val sdkInt = Build.VERSION.SDK_INT
     return "$appName/$version (Android; $manufacturer $model; Android $osVer SDK $sdkInt)"
+}
+
+
+private fun getAppName(): String {
+    val context = AndroidKDownloadFile.appContext
+    val applicationInfo = context.applicationInfo
+    val stringId = applicationInfo.labelRes
+    return if (stringId == 0) {
+        applicationInfo.nonLocalizedLabel.toString()
+    } else {
+        context.getString(stringId)
+    }
 }
