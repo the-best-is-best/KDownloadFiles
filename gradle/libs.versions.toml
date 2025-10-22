@@ -1,19 +1,19 @@
 [versions]
 
-calfPermissions = "0.8.0"
+#calfPermissions = "0.8.0"
 coreVersion = "1.16.0"
-kotlin = "2.2.0"
-compose = "1.8.2"
-agp = "8.10.1"
-androidx-activityCompose = "1.10.1"
-androidx-uiTest = "1.8.2"
-hotReload = "1.0.0-beta04"
+kotlin = "2.2.20"
+compose = "1.9.1"
+agp = "8.13.0"
+androidx-activityCompose = "1.11.0"
+androidx-uiTest = "1.9.3"
+#hotReload = "1.0.0-beta04"
 kotlinxCoroutinesCore = "1.10.2"
 runner = "1.7.0"
 core = "1.7.0"
 junit = "1.3.0"
 startupRuntime = "1.2.0"
-ktor = "3.2.3"
+ktor = "3.3.1"
 maven-publish = "0.34.0"
 
 [libraries]
@@ -22,7 +22,7 @@ androidx-activityCompose = { module = "androidx.activity:activity-compose", vers
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreVersion" }
 androidx-uitest-testManifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidx-uiTest" }
 androidx-uitest-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "androidx-uiTest" }
-calf-permissions = { module = "com.mohamedrejeb.calf:calf-permissions", version.ref = "calfPermissions" }
+#calf-permissions = { module = "com.mohamedrejeb.calf:calf-permissions", version.ref = "calfPermissions" }
 core = { module = "androidx.core:core", version.ref = "coreVersion" }
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
 kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
@@ -42,6 +42,6 @@ compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "
 compose = { id = "org.jetbrains.compose", version.ref = "compose" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-hotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "hotReload" }
+#hotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "hotReload" }
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
