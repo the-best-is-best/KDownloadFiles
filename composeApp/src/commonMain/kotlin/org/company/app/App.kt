@@ -13,28 +13,26 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.mohamedrejeb.calf.permissions.ExperimentalPermissionsApi
-import com.mohamedrejeb.calf.permissions.Permission
-import com.mohamedrejeb.calf.permissions.rememberPermissionState
+
 import io.github.kdownloadfile.configration.AndroidKDownloadFileConfiguration
 import io.github.kdownloadfile.configration.DownloadNotificationVisibility
+import io.github.kdownloadfile.configration.IosKDownloadFileConfiguration
 import io.github.kdownloadfile.configration.KDownloadFileConfiguration
 import io.github.kdownloadfile.downloadFile
 import io.github.kdownloadfile.openFile
+import io.github.kpermissionnotification.NotificationPermission
+import io.github.kpermissionsCore.rememberPermissionState
 import kotlinx.coroutines.launch
 import org.company.app.theme.AppTheme
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
-@OptIn(ExperimentalPermissionsApi::class)
 @Preview
 @Composable
 internal fun App() = AppTheme {
     val scope = rememberCoroutineScope()
-    val notificationPermissionState = rememberPermissionState(
-        Permission.Notification,
+    val notificationPermissionState = rememberPermissionState(NotificationPermission)
 
-    )
     LaunchedEffect(Unit) {
         notificationPermissionState.launchPermissionRequest()
     }
@@ -49,7 +47,7 @@ internal fun App() = AppTheme {
             onClick = {
                 scope.launch {
                         val pathRes = downloadFile(
-                            url = "https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf",
+                            url = "https://cdn.hotelnearmedanta.com/testfile.org/testfile.org-5GB.dat",
                             fileName = "re.pdf",
                             folderName = "doc",
                             configuration = KDownloadFileConfiguration(
@@ -57,6 +55,9 @@ internal fun App() = AppTheme {
                                 noDuplicateFile = true,
                                 android = AndroidKDownloadFileConfiguration(
                                     notificationVisibility = DownloadNotificationVisibility.VisibleAndNotifyCompleted
+                                ),
+                                ios = IosKDownloadFileConfiguration(
+                                    showLiveActivity = true
                                 )
                             )
                         )

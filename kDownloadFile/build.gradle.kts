@@ -32,7 +32,7 @@ tasks.withType<PublishToMavenRepository> {
 extra["packageNameSpace"] = "io.github.kdownloadfile"
 extra["groupId"] = "io.github.the-best-is-best"
 extra["artifactId"] = "kdownload-file"
-extra["version"] = "2.5.0"
+extra["version"] = "2.5.1"
 extra["packageName"] = "KDownloadFile"
 extra["packageUrl"] = "https://github.com/the-best-is-best/KDownloadFiles"
 extra["packageDescription"] =
@@ -100,7 +100,7 @@ kotlin {
     androidLibrary {
         namespace = "io.github.kdownloadfile"
         compileSdk = 36
-        minSdk = 21
+        minSdk = 23
 
 
     }

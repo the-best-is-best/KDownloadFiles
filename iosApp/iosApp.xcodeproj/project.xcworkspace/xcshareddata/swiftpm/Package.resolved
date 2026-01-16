@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/the-best-is-best/KDownloadFileInterop",
       "state" : {
-        "revision" : "e162614d0e5a5e18d72166e6a6c5c8a9cc7fcf2d",
-        "version" : "0.2.0-rc3"
+        "revision" : "1c8d298d05948e4adc6ee386dfca74ab12560f4c",
+        "version" : "0.2.0"
       }
     }
   ],

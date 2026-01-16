@@ -12,7 +12,9 @@ data class KDownloadFileConfiguration(
     val saveToDownloads: Boolean = true,
     val saveInCacheFiles: Boolean = false,
     val android: AndroidKDownloadFileConfiguration = AndroidKDownloadFileConfiguration(),
-    val ios: IosKDownloadFileConfiguration = IosKDownloadFileConfiguration()
+    val ios: IosKDownloadFileConfiguration = IosKDownloadFileConfiguration(
+        showLiveActivity = false
+    )
 ) {
     init {
         if (saveToDownloads && saveInCacheFiles) {
