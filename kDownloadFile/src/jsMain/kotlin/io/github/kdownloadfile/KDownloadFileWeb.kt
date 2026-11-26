@@ -4,6 +4,7 @@ package io.github.kdownloadfile
 
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.promise
+import kotlinx.js.JsPlainObject
 import org.khronos.webgl.Int8Array
 import org.khronos.webgl.Uint8Array
 import kotlin.js.Promise
@@ -11,9 +12,10 @@ import kotlin.js.Promise
 /*
  * The library's API for JavaScript / TypeScript (React etc.), generated into kdownloadfile.d.mts:
  *
- *   import { downloadFile, DownloadResult } from 'kdownloadfile'
+ *   import { downloadFile, openFile, DownloadResult } from 'kdownloadfile'
  *
- *   const result = await downloadFile(url, 'report.pdf', p => setPercent(p.percent))
+ *   // The browser asks the user where to save ("Save as"), then the file downloads there.
+ *   const result = await downloadFile(url, 'report.pdf', { onProgress: setProgress })
  *   if (result instanceof DownloadResult.Success) openFile(result.path)
  *   else if (result instanceof DownloadResult.HttpError && result.statusCode === 404) showNoResult()
  *
@@ -22,45 +24,83 @@ import kotlin.js.Promise
 
 private val scope = MainScope()
 
-/** Downloads [url]; the browser saves it as [fileName]. */
+/**
+ * Options of [downloadFileForJs] and the save functions; a plain object in TypeScript, every field optional.
+ * There is nothing about where to save: the browser always asks the user ("Save as").
+ *
+ * - `headers`: extra request headers, for example `{ Authorization: 'Bearer …' }` (downloads only).
+ * - `onProgress`: called while the file downloads or is written.
+ */
+@JsExport
+@JsPlainObject
+external interface FileOptions {
+    /** A plain object of header names to values, for example `{ Authorization: 'Bearer …' }`. */
+    val headers: dynamic
+    val onProgress: ((DownloadProgress) -> Unit)?
+}
+
+/** Downloads [url]; the browser asks the user where to save it, suggesting [fileName]. */
 @JsExport
 @JsName("downloadFile")
 fun downloadFileForJs(
     url: String,
     fileName: String,
-    onProgress: ((DownloadProgress) -> Unit)? = null,
-): Promise<DownloadResult> = scope.promise {
-    downloadFile(url, fileName, onProgress = onProgress?.toKotlin()).toJs()
-}
+    options: FileOptions? = null
+): Promise<DownloadResult> =
+    scope.promise {
+        downloadFile(
+            url,
+            fileName,
+            customHeaders = headersToMap(options?.headers),
+            onProgress = options?.onProgress?.toKotlin(),
+        ).toJs()
+    }
 
-/** Saves [bytes]; the browser downloads it as [fileName]. */
+/** Saves [bytes]; the browser asks the user where, suggesting [fileName]. */
 @JsExport
 @JsName("saveBytes")
 fun saveBytesForJs(
     bytes: Uint8Array,
     fileName: String,
-    onProgress: ((DownloadProgress) -> Unit)? = null,
-): Promise<DownloadResult> = scope.promise {
-    // Kotlin's ByteArray is an Int8Array: same memory, no copy.
-    val byteArray = Int8Array(bytes.buffer, bytes.byteOffset, bytes.length).unsafeCast<ByteArray>()
-    saveFile(byteArray, fileName, onProgress = onProgress?.toKotlin()).toJs()
-}
+    options: FileOptions? = null
+): Promise<DownloadResult> =
+    scope.promise {
+        // Kotlin's ByteArray is an Int8Array: same memory, no copy.
+        val byteArray =
+            Int8Array(bytes.buffer, bytes.byteOffset, bytes.length).unsafeCast<ByteArray>()
+        save(byteArray, fileName, options)
+    }
 
-/** Saves [text] as UTF-8; the browser downloads it as [fileName]. */
+/** Saves [text] (UTF-8); the browser asks the user where, suggesting [fileName]. */
 @JsExport
 @JsName("saveText")
 fun saveTextForJs(
     text: String,
     fileName: String,
-    onProgress: ((DownloadProgress) -> Unit)? = null,
-): Promise<DownloadResult> = scope.promise {
-    saveFile(text.encodeToByteArray(), fileName, onProgress = onProgress?.toKotlin()).toJs()
-}
+    options: FileOptions? = null
+): Promise<DownloadResult> =
+    scope.promise { save(text.encodeToByteArray(), fileName, options) }
 
 /** Opens a [DownloadResult.Success.path] (a blob URL) in a new tab. */
 @JsExport
 @JsName("openFile")
 fun openFileForJs(path: String) = openFile(path)
+
+private suspend fun save(
+    bytes: ByteArray,
+    fileName: String,
+    options: FileOptions?
+): DownloadResult =
+    saveFile(
+        bytes,
+        fileName,
+        onProgress = options?.onProgress?.toKotlin(),
+    ).toJs()
+
+private fun headersToMap(headers: dynamic): Map<String, String> =
+    if (headers == null || headers == undefined) emptyMap()
+    else js("Object.keys")(headers).unsafeCast<Array<String>>()
+        .associateWith { key -> headers[key].toString() }
 
 /**
  * Progress of a download or save, with plain `number`s for TypeScript.
@@ -85,6 +125,9 @@ sealed class DownloadResult {
     /** The server could not be reached. */
     class NoInternet internal constructor() : DownloadResult()
 
+    /** The user closed the "Save as" window without choosing. */
+    class Cancelled internal constructor() : DownloadResult()
+
     /** Anything else; [message] says what. */
     class Failed internal constructor(val message: String) : DownloadResult()
 }
@@ -105,6 +148,7 @@ private fun Result<String>.toJs(): DownloadResult = fold(
         when (error) {
             is KDownloadFileHttpException -> DownloadResult.HttpError(error.statusCode)
             is KDownloadFileNoInternetException -> DownloadResult.NoInternet()
+            is KDownloadFileCancelledException -> DownloadResult.Cancelled()
             else -> DownloadResult.Failed(error.message ?: error.toString())
         }
     },

@@ -23,3 +23,7 @@ class KDownloadFileHttpException(val statusCode: Int) :
 /** The server could not be reached: no connection, DNS failure or a timeout. */
 class KDownloadFileNoInternetException(cause: Throwable? = null) :
     KDownloadFileException("No internet connection", cause)
+
+/** The user closed the browser's "Save as" window without choosing (web only). */
+class KDownloadFileCancelledException :
+    KDownloadFileException("Cancelled: no place to save the file was chosen")

@@ -29,13 +29,15 @@ While `npm run dev` runs, rebuilding with `npm run shared` reloads the page by i
   ```ts
   import { downloadFile, openFile, DownloadResult } from 'kdownloadfile'
 
-  const result = await downloadFile(url, 'report.pdf', (p) => setPercent(p.percent))
+  // The browser asks the user where to save ("Save as"), then the file downloads there.
+  const result = await downloadFile(url, 'report.pdf', { onProgress: (p) => setPercent(p.percent) })
   if (result instanceof DownloadResult.Success) openFile(result.path)
   else if (result instanceof DownloadResult.HttpError && result.statusCode === 404) showNoResult()
   ```
 
   Also `saveBytes(Uint8Array, …)` and `saveText(string, …)`. Every call resolves (never rejects)
-  with a `DownloadResult`: `Success`, `HttpError`, `NoInternet` or `Failed`.
+  with a `DownloadResult`: `Success`, `HttpError`, `NoInternet`, `Cancelled` or `Failed`.
+- `../kDownloadFile/src/jsMain/.../internal/FileSystemAccess.kt`: the browser's "Save as" window.
 - `src/App.tsx`: the buttons, the progress bar and the result.
 - `testFiles.ts`: test files served by the dev server (`/test-files/10mb.bin`, `no-length.bin`,
   and 404 for anything else). They are local because a browser cannot fetch from another site

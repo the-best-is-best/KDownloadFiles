@@ -1,15 +1,16 @@
 import { useState } from 'react'
-import { downloadFile, saveBytes, openFile, DownloadResult, type DownloadProgress } from 'kdownloadfile'
-
-type Job = { label: string; run: (onProgress: (p: DownloadProgress) => void) => Promise<DownloadResult> }
+import { downloadFile, DownloadResult, openFile, saveBytes, type DownloadProgress } from 'kdownloadfile'
 
 const MB = 1024 * 1024
 
+/** Each button is one library call; the browser asks the user where to save. */
+type Job = { label: string; run: (onProgress: (p: DownloadProgress) => void) => Promise<DownloadResult> }
+
 const jobs: Job[] = [
-  { label: 'Download 10 MB', run: (p) => downloadFile('/test-files/10mb.bin', 'progress-test.bin', p) },
-  { label: 'Download (no size)', run: (p) => downloadFile('/test-files/no-length.bin', 'no-length.bin', p) },
-  { label: 'Save 20 MB', run: (p) => saveBytes(new Uint8Array(20 * MB), 'save-test.bin', p) },
-  { label: 'Missing file (404)', run: (p) => downloadFile('/test-files/missing.bin', 'missing.bin', p) },
+  { label: 'Download 10 MB', run: (onProgress) => downloadFile('/test-files/10mb.bin', 'report.bin', { onProgress }) },
+  { label: 'Download (no size)', run: (onProgress) => downloadFile('/test-files/no-length.bin', 'invoice.bin', { onProgress }) },
+  { label: 'Save 20 MB', run: (onProgress) => saveBytes(new Uint8Array(20 * MB), 'export.bin', { onProgress }) },
+  { label: 'Missing file (404)', run: (onProgress) => downloadFile('/test-files/missing.bin', 'missing.bin', { onProgress }) },
 ]
 
 export function App() {
@@ -29,7 +30,7 @@ export function App() {
   return (
     <main>
       <h1>KDownloadFile · Web</h1>
-      <p className="hint">The kDownloadFile library (Kotlin/JS, <code>@JsExport</code>) called from React.</p>
+      <p className="hint">The kDownloadFile library (Kotlin/JS) called from React. The browser asks where to save.</p>
 
       <div className="buttons">
         {jobs.map((job) => (
@@ -79,7 +80,13 @@ function ResultView({ label, result }: { label: string; result: DownloadResult }
           <span>{label}: done</span>
           <button onClick={() => openFile(result.path)}>Open</button>
         </div>
-        <small className="path">{result.path}</small>
+      </section>
+    )
+  }
+  if (result instanceof DownloadResult.Cancelled) {
+    return (
+      <section className="card">
+        <span>{label}: cancelled</span>
       </section>
     )
   }

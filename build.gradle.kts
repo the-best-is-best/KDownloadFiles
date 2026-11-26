@@ -6,5 +6,6 @@ plugins {
 //    alias(libs.plugins.hotReload).apply(false)
     alias(libs.plugins.android.kotlin.multiplatform.library) apply false
     alias(libs.plugins.maven.publish) apply false
+    alias(libs.plugins.js.plain.objects) apply false
 
 }
