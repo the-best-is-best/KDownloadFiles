@@ -1,0 +1,133 @@
+:root {
+  --bg: #f7f7f8;
+  --card: #ffffff;
+  --text: #1b1b1f;
+  --muted: #5f6068;
+  --accent: #3b5bdb;
+  --ok: #2b8a3e;
+  --error: #c92a2a;
+  --track: #e3e5ea;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131316;
+    --card: #1e1f24;
+    --text: #ececf1;
+    --muted: #a0a2ab;
+    --accent: #7c96ff;
+    --ok: #69db7c;
+    --error: #ff8787;
+    --track: #2e3038;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+main {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 32px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+button {
+  font: inherit;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+}
+
+.card.ok {
+  border-left: 4px solid var(--ok);
+}
+
+.card.failed {
+  border-left: 4px solid var(--error);
+  color: var(--error);
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+small {
+  color: var(--muted);
+}
+
+.path {
+  word-break: break-all;
+}
+
+.bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--track);
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  transition: width 0.15s linear;
+}
+
+.indeterminate .fill {
+  width: 35%;
+  animation: slide 1.1s ease-in-out infinite;
+}
+
+@keyframes slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(290%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indeterminate .fill { animation: none; width: 100%; opacity: 0.4; }
+}

@@ -76,5 +76,6 @@ fun App() = AppTheme {
             Text("Download")
         }
 
+        ProgressDemo(Modifier.padding(top = 32.dp))
     }
 }

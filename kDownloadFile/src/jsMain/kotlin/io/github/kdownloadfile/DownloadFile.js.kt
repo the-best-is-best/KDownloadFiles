@@ -40,9 +40,10 @@ private suspend fun fetch(url: String, customHeaders: Map<String, String>): Resp
 /** Reads the body chunk by chunk, so the bytes received can be reported. */
 private suspend fun readBody(response: Response, progress: ProgressReporter): Blob {
     val total = response.headers.get("Content-Length")?.toLongOrNull()?.takeIf { it > 0 }
+    // response.body is typed `dynamic` (a ReadableStream), so getReader() is called on it directly.
     val body = response.body ?: return response.blob().await()
 
-    val reader = body.asDynamic().getReader()
+    val reader = body.getReader()
     val chunks = mutableListOf<dynamic>()
     var done = 0L
     progress.report(0, total)

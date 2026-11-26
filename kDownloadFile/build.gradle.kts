@@ -111,9 +111,17 @@ kotlin {
     }
     jvm()
 
+    // JS library with TypeScript definitions, for React/TS apps (see /web).
+    // Build: ./gradlew :kDownloadFile:jsBrowserProductionLibraryDistribution
     js {
+        outputModuleName = "kdownloadfile"
         browser()
-        binaries.executable()
+        binaries.library()
+        generateTypeScriptDefinitions()
+        compilerOptions {
+            target = "es2015"
+            optIn.add("kotlin.js.ExperimentalJsExport")
+        }
     }
 
 //    @OptIn(ExperimentalWasmDsl::class)
