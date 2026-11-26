@@ -39,6 +39,7 @@ ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "compose"
 androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidxComposeUiTestManifest" }
 androidx-startup-runtime = { module = "androidx.startup:startup-runtime", version.ref = "startupRuntime" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesCore" }
 kpermissions-notification = { module = "io.github.the-best-is-best:kpermissions-notification", version.ref = "kpermissions" }
 ktor-client-apache5 = { module = "io.ktor:ktor-client-apache5", version.ref = "ktor" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }

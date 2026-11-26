@@ -1,19 +1,26 @@
 package io.github.kdownloadfile
 
 import io.github.kdownloadfile.configration.KDownloadFileConfiguration
+import io.github.kdownloadfile.internal.ProgressReporter
 import io.github.kdownloadfile.internal.triggerBrowserDownload
 import org.khronos.webgl.Int8Array
 import org.w3c.files.Blob
 
-/** The browser decides where the file goes, so [folderName] and [configuration] are not used. */
-actual suspend fun saveFile(
+/**
+ * The browser decides where the file goes, so [folderName] and [configuration] are not used.
+ * The browser saves the file in one step, so progress goes from 0 straight to 100%.
+ */
+internal actual suspend fun platformSaveFile(
     bytes: ByteArray,
     fileName: String,
     folderName: String?,
     configuration: KDownloadFileConfiguration,
-): Result<String> = try {
+    progress: ProgressReporter,
+): String {
+    val total = bytes.size.toLong()
+    progress.report(0, total)
     // A Kotlin/JS ByteArray is an Int8Array, so it can be passed to Blob without copying.
-    Result.success(triggerBrowserDownload(Blob(arrayOf(bytes.unsafeCast<Int8Array>())), fileName))
-} catch (e: Throwable) {
-    Result.failure(e)
+    val url = triggerBrowserDownload(Blob(arrayOf(bytes.unsafeCast<Int8Array>())), fileName)
+    progress.report(total, total)
+    return url
 }

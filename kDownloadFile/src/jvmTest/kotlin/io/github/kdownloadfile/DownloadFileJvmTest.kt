@@ -14,6 +14,7 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 
 class DownloadFileJvmTest {
     private lateinit var home: File
@@ -21,6 +22,7 @@ class DownloadFileJvmTest {
     private lateinit var server: HttpServer
     private val requests = AtomicInteger()
     private val baseUrl get() = "http://127.0.0.1:${server.address.port}"
+    private val bigBody = ByteArray(300 * 1024) { it.toByte() }
 
     @BeforeTest
     fun setUp() {
@@ -34,6 +36,12 @@ class DownloadFileJvmTest {
                 val body = byteArrayOf(1, 2, 3)
                 exchange.sendResponseHeaders(200, body.size.toLong())
                 exchange.responseBody.use { it.write(body) }
+            }
+            createContext("/big.bin") { exchange ->
+                // 0 = chunked transfer when the request asks for it, otherwise the real length.
+                val chunked = exchange.requestURI.query == "chunked"
+                exchange.sendResponseHeaders(200, if (chunked) 0 else bigBody.size.toLong())
+                exchange.responseBody.use { it.write(bigBody) }
             }
             createContext("/missing.pdf") { exchange ->
                 requests.incrementAndGet()
@@ -50,6 +58,33 @@ class DownloadFileJvmTest {
         server.stop(0)
         System.setProperty("user.home", originalHome!!)
         home.deleteRecursively()
+    }
+
+    @Test
+    fun reportsProgressOnTheCallersThread() = runBlocking {
+        val callerThread = Thread.currentThread()
+        val seen = mutableListOf<KDownloadProgress>()
+        val path = downloadFile("$baseUrl/big.bin", "big.bin", onProgress = { progress ->
+            assertEquals(callerThread, Thread.currentThread())
+            seen += progress
+        }).getOrThrow()
+
+        assertEquals(bigBody.size.toLong(), File(path).length())
+        assertEquals(KDownloadProgress(bigBody.size.toLong(), bigBody.size.toLong()), seen.last())
+        assertEquals(100, seen.last().percent)
+        assertEquals(seen.map { it.bytesDone }.sorted(), seen.map { it.bytesDone })
+    }
+
+    @Test
+    fun endsAt100PercentWithoutContentLength() = runBlocking {
+        val seen = mutableListOf<KDownloadProgress>()
+        downloadFile(
+            "$baseUrl/big.bin?chunked",
+            "big.bin",
+            onProgress = { seen += it }).getOrThrow()
+
+        assertNull(seen.first().percent) // size unknown while downloading
+        assertEquals(100, seen.last().percent)
     }
 
     @Test

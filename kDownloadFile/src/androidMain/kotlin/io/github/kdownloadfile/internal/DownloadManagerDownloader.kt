@@ -13,9 +13,14 @@ import io.github.kdownloadfile.KDownloadFileException
 import io.github.kdownloadfile.KDownloadFileHttpException
 import io.github.kdownloadfile.KDownloadFileNoInternetException
 import io.github.kdownloadfile.configration.AndroidKDownloadFileConfiguration
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
 import java.net.URI
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -30,7 +35,8 @@ internal sealed interface DownloadManagerTarget {
 }
 
 /**
- * Downloads [url] with DownloadManager and waits until it is done.
+ * Downloads [url] with DownloadManager and waits until it is done, reporting the bytes received
+ * to [progress] while waiting.
  *
  * @return the file DownloadManager wrote.
  * @throws KDownloadFileHttpException when the server answers with an error such as 404.
@@ -41,6 +47,7 @@ internal suspend fun downloadWithDownloadManager(
     headers: Map<String, String>,
     notification: AndroidKDownloadFileConfiguration,
     target: DownloadManagerTarget,
+    progress: ProgressReporter,
 ): File {
     val request = DownloadManager.Request(url.toUri())
         .setTitle(notification.title)
@@ -66,34 +73,82 @@ internal suspend fun downloadWithDownloadManager(
     }
 
     val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-    return suspendCancellableCoroutine { continuation ->
-        var downloadId = -1L
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(ctx: Context?, intent: Intent?) {
-                val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L) ?: -1L
-                if (id != downloadId) return
-                runCatching { context.unregisterReceiver(this) }
-                if (!continuation.isActive) return
-                runCatching { finishedDownload(downloadManager, downloadId) }
-                    .onSuccess { continuation.resume(it) }
-                    .onFailure { continuation.resumeWithException(it) }
+    val downloadId = AtomicLong(-1L)
+    return coroutineScope {
+        // DownloadManager has no progress callback, so it is asked a few times a second.
+        val poller = launch {
+            while (isActive) {
+                val id = downloadId.get()
+                if (id != -1L) reportProgress(downloadManager, id, progress)
+                delay(PROGRESS_POLL_MILLIS)
             }
         }
-
-        // Registered before enqueue, so a very fast download cannot finish before we listen.
-        ContextCompat.registerReceiver(
-            context,
-            receiver,
-            IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-            ContextCompat.RECEIVER_EXPORTED
-        )
-        continuation.invokeOnCancellation { runCatching { context.unregisterReceiver(receiver) } }
-
-        downloadId = downloadManager.enqueue(request)
-        if (downloadId == -1L) {
-            runCatching { context.unregisterReceiver(receiver) }
-            continuation.resumeWithException(KDownloadFileException("Failed to start download"))
+        val file = try {
+            awaitDownload(context, downloadManager, request) { downloadId.set(it) }
+        } finally {
+            poller.cancel()
         }
+        // The last poll may have come just before the end, so ask once more now that it is done.
+        reportProgress(downloadManager, downloadId.get(), progress)
+        file
+    }
+}
+
+private const val PROGRESS_POLL_MILLIS = 250L
+
+/** Enqueues [request] and waits for DownloadManager's "download complete" broadcast. */
+private suspend fun awaitDownload(
+    context: Context,
+    downloadManager: DownloadManager,
+    request: DownloadManager.Request,
+    onEnqueued: (Long) -> Unit,
+): File = suspendCancellableCoroutine { continuation ->
+    // Written here, read on the main thread by the receiver.
+    val downloadId = AtomicLong(-1L)
+    val receiver = object : BroadcastReceiver() {
+        override fun onReceive(ctx: Context?, intent: Intent?) {
+            val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L) ?: -1L
+            if (id == -1L || id != downloadId.get()) return
+            runCatching { context.unregisterReceiver(this) }
+            if (!continuation.isActive) return
+            runCatching { finishedDownload(downloadManager, id) }
+                .onSuccess { continuation.resume(it) }
+                .onFailure { continuation.resumeWithException(it) }
+        }
+    }
+
+    // Registered before enqueue, so a very fast download cannot finish before we listen.
+    ContextCompat.registerReceiver(
+        context,
+        receiver,
+        IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+        ContextCompat.RECEIVER_EXPORTED
+    )
+    continuation.invokeOnCancellation { runCatching { context.unregisterReceiver(receiver) } }
+
+    val id = downloadManager.enqueue(request)
+    downloadId.set(id)
+    if (id == -1L) {
+        runCatching { context.unregisterReceiver(receiver) }
+        continuation.resumeWithException(KDownloadFileException("Failed to start download"))
+    } else {
+        onEnqueued(id)
+    }
+}
+
+/** Reports the bytes received so far; the total is -1 in DownloadManager until the server sends it. */
+private fun reportProgress(
+    downloadManager: DownloadManager,
+    downloadId: Long,
+    progress: ProgressReporter
+) {
+    downloadManager.query(DownloadManager.Query().setFilterById(downloadId))?.use { cursor ->
+        if (!cursor.moveToFirst()) return
+        val done =
+            cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
+        val total =
+            cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
+        progress.report(done.coerceAtLeast(0), total.takeIf { it > 0 })
     }
 }
 

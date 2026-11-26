@@ -10,7 +10,7 @@ private const val TAG = "KDownloadFile"
 /**
  * Writes [bytes] into [folder] through a temporary file, so a failed write never leaves a
  * partial file behind. With [noDuplicateFile] an existing file is replaced; otherwise a free
- * name such as `name (1).ext` is used.
+ * name such as `name (1).ext` is used. Reports progress to [progress] while writing.
  *
  * @return the path of the written file.
  */
@@ -18,14 +18,17 @@ internal fun writeFile(
     folder: File,
     bytes: ByteArray,
     fileName: String,
-    noDuplicateFile: Boolean
+    noDuplicateFile: Boolean,
+    progress: ProgressReporter,
 ): String {
     if (!folder.exists() && !folder.mkdirs()) throw IOException("Could not create ${folder.absolutePath}")
     val name =
         if (noDuplicateFile) fileName else freeFileName(fileName) { File(folder, it).exists() }
     val temp = File(folder, ".$name.part")
     try {
-        temp.writeBytes(bytes)
+        temp.outputStream().use { output ->
+            writeInChunks(bytes, progress) { offset, length -> output.write(bytes, offset, length) }
+        }
         return moveFile(temp, File(folder, name)).absolutePath
     } finally {
         temp.delete()

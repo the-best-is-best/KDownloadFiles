@@ -24,6 +24,7 @@ internal fun saveToDownloadsWithMediaStore(
     fileName: String,
     folderName: String?,
     noDuplicateFile: Boolean,
+    progress: ProgressReporter,
 ): String {
     val resolver = context.contentResolver
     val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
@@ -51,7 +52,9 @@ internal fun saveToDownloadsWithMediaStore(
     val uri = resolver.insert(collection, values)
         ?: throw IOException("Could not create $fileName in Downloads")
     try {
-        resolver.openOutputStream(uri)?.use { it.write(bytes) }
+        resolver.openOutputStream(uri)?.use { output ->
+            writeInChunks(bytes, progress) { offset, length -> output.write(bytes, offset, length) }
+        }
             ?: throw IOException("Could not write $fileName")
         resolver.update(
             uri,

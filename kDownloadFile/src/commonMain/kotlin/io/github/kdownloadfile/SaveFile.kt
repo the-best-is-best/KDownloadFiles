@@ -1,6 +1,9 @@
 package io.github.kdownloadfile
 
 import io.github.kdownloadfile.configration.KDownloadFileConfiguration
+import io.github.kdownloadfile.internal.ProgressReporter
+import io.github.kdownloadfile.internal.withProgress
+import kotlinx.coroutines.CancellationException
 
 /**
  * Saves content you already have (for example a response body you downloaded yourself with Ktor)
@@ -20,11 +23,32 @@ import io.github.kdownloadfile.configration.KDownloadFileConfiguration
  *
  * On JS the browser downloads the file, and the result is a blob URL instead of a path.
  *
+ * @param onProgress called while the file is written, on the caller's coroutine.
  * @return the path of the saved file, which can be passed to [openFile].
  */
-expect suspend fun saveFile(
+suspend fun saveFile(
     bytes: ByteArray,
     fileName: String,
     folderName: String? = null,
     configuration: KDownloadFileConfiguration = KDownloadFileConfiguration(),
-): Result<String>
+    onProgress: ((KDownloadProgress) -> Unit)? = null,
+): Result<String> = try {
+    Result.success(
+        withProgress(onProgress) { progress ->
+            platformSaveFile(bytes, fileName, folderName, configuration, progress)
+        }
+    )
+} catch (e: CancellationException) {
+    throw e
+} catch (e: Throwable) {
+    Result.failure(e)
+}
+
+/** Writes the file; returns its path and throws on failure. */
+internal expect suspend fun platformSaveFile(
+    bytes: ByteArray,
+    fileName: String,
+    folderName: String?,
+    configuration: KDownloadFileConfiguration,
+    progress: ProgressReporter,
+): String

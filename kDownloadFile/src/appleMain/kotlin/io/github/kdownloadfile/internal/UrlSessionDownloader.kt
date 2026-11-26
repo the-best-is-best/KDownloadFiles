@@ -5,7 +5,12 @@ import io.github.kdownloadfile.KDownloadFileHttpException
 import io.github.kdownloadfile.KDownloadFileNoInternetException
 import io.github.kdownloadfile.configration.KDownloadFileConfiguration
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import platform.Foundation.NSBundle
 import platform.Foundation.NSError
 import platform.Foundation.NSFileManager
@@ -24,6 +29,7 @@ import platform.Foundation.NSURLErrorNetworkConnectionLost
 import platform.Foundation.NSURLErrorNotConnectedToInternet
 import platform.Foundation.NSURLErrorTimedOut
 import platform.Foundation.NSURLSession
+import platform.Foundation.NSURLSessionTask
 import platform.Foundation.downloadTaskWithRequest
 import platform.Foundation.setValue
 
@@ -32,7 +38,7 @@ import platform.Foundation.setValue
  *
  * Unlike the Swift `DownloadManagerInterop`, this sends no probe request first and checks the
  * HTTP status of the download itself, so a 404 comes back as [KDownloadFileHttpException]
- * instead of being saved as the file.
+ * instead of being saved as the file. Reports the bytes received to [progress].
  *
  * @return the path of the saved file.
  */
@@ -43,6 +49,7 @@ internal suspend fun downloadWithUrlSession(
     folderName: String?,
     configuration: KDownloadFileConfiguration,
     customHeaders: Map<String, String>,
+    progress: ProgressReporter,
 ): String {
     val nsUrl = NSURL.URLWithString(url) ?: throw KDownloadFileException("Invalid URL: $url")
 
@@ -51,11 +58,12 @@ internal suspend fun downloadWithUrlSession(
         customHeaders.forEach { (key, value) -> setValue(value, forHTTPHeaderField = key) }
     }
 
-    return suspendCancellableCoroutine { continuation ->
-        val task =
-            NSURLSession.sharedSession.downloadTaskWithRequest(request) { location, response, error ->
-                // The downloaded file is deleted when this block returns, so it is moved here.
-                val result = when {
+    val outcome = CompletableDeferred<Result<String>>()
+    val task =
+        NSURLSession.sharedSession.downloadTaskWithRequest(request) { location, response, error ->
+            // The downloaded file is deleted when this block returns, so it is moved here.
+            outcome.complete(
+                when {
                     error != null -> Result.failure(error.toDownloadException())
                     else -> {
                         val status = (response as? NSHTTPURLResponse)?.statusCode?.toInt() ?: 0
@@ -73,11 +81,39 @@ internal suspend fun downloadWithUrlSession(
                         }
                     }
                 }
-                if (continuation.isActive) continuation.resumeWith(result)
+            )
+        }
+    task.resume()
+
+    return try {
+        coroutineScope {
+            // The task has no progress callback with a completion handler, so it is asked a few times a second.
+            val poller = launch {
+                while (isActive) {
+                    task.reportProgress(progress)
+                    delay(PROGRESS_POLL_MILLIS)
+                }
             }
-        continuation.invokeOnCancellation { task.cancel() }
-        task.resume()
+            val path = try {
+                outcome.await().getOrThrow()
+            } finally {
+                poller.cancel()
+            }
+            task.reportProgress(progress)
+            path
+        }
+    } catch (e: CancellationException) {
+        task.cancel()
+        throw e
     }
+}
+
+private const val PROGRESS_POLL_MILLIS = 250L
+
+/** The expected size is NSURLSessionTransferSizeUnknown (-1) when the server sends no Content-Length. */
+private fun NSURLSessionTask.reportProgress(progress: ProgressReporter) {
+    val total = countOfBytesExpectedToReceive
+    progress.report(countOfBytesReceived.coerceAtLeast(0), total.takeIf { it > 0 })
 }
 
 @OptIn(ExperimentalForeignApi::class)

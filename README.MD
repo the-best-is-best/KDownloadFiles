@@ -126,25 +126,62 @@ fun DownloadButton() {
 ## 🔧 API Overview
 
 ```kotlin
-expect suspend fun downloadFile(
+suspend fun downloadFile(
     url: String,
     fileName: String,
     folderName: String? = null,
     configuration: KDownloadFileConfiguration = KDownloadFileConfiguration(),
-    customHeaders: Map<String, String> = emptyMap()
+    customHeaders: Map<String, String> = emptyMap(),
+    onProgress: ((KDownloadProgress) -> Unit)? = null,
 ): Result<String>
 
-expect suspend fun saveFile(
+suspend fun saveFile(
     bytes: ByteArray,
     fileName: String,
     folderName: String? = null,
     configuration: KDownloadFileConfiguration = KDownloadFileConfiguration(),
+    onProgress: ((KDownloadProgress) -> Unit)? = null,
 ): Result<String>
 
 expect fun openFile(
     filePath: String
 )
 ````
+
+## 📊 Progress
+
+Pass `onProgress` to `downloadFile` or `saveFile` to show a percentage. It is called on the
+coroutine you called from (the main thread when you call from the UI), so you can update the
+UI directly:
+
+```kotlin
+var percent by remember { mutableStateOf<Int?>(null) }
+
+scope.launch {
+    downloadFile(url, "report.pdf", onProgress = { progress ->
+        percent = progress.percent // null while the size is unknown
+    })
+}
+
+when (val p = percent) {
+    null -> CircularProgressIndicator()               // size unknown: spinner
+    else -> {
+        LinearProgressIndicator(progress = { p / 100f })
+        Text("$p%")
+    }
+}
+```
+
+`KDownloadProgress` has `bytesDone`, `totalBytes` (null when the server sends no
+`Content-Length`), `fraction` (0.0–1.0) and `percent` (0–100). The last update is always 100%
+when the call succeeds.
+
+|         | `downloadFile`                                                                          | `saveFile`                                      |
+|---------|-----------------------------------------------------------------------------------------|-------------------------------------------------|
+| Android | every ¼ s from DownloadManager                                                          | per 64 KB written                               |
+| iOS     | every ¼ s from `NSURLSession` (not with `showLiveActivity`: the Live Activity shows it) | per 64 KB written                               |
+| Desktop | per chunk received                                                                      | per 64 KB written                               |
+| JS      | per chunk received                                                                      | 0% then 100% (the browser saves it in one step) |
 
 ## ❗ Errors
 

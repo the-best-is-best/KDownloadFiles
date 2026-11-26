@@ -59,6 +59,16 @@ class SaveFileJvmTest {
     }
 
     @Test
+    fun reportsProgressWhileSaving() = runBlocking {
+        val bytes = ByteArray(200 * 1024)
+        val seen = mutableListOf<KDownloadProgress>()
+        saveFile(bytes, "big.bin", onProgress = { seen += it }).getOrThrow()
+
+        assertEquals(100, seen.last().percent)
+        assertEquals(bytes.size.toLong(), seen.last().bytesDone)
+    }
+
+    @Test
     fun savesIntoCacheFolder() = runBlocking {
         val config = KDownloadFileConfiguration(saveToDownloads = false, saveInCacheFiles = true)
         val path = saveFile(byteArrayOf(7), "a.bin", configuration = config).getOrThrow()
