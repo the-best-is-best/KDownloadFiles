@@ -36,7 +36,7 @@
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.the-best-is-best/kdownload-file)](https://central.sonatype.com/artifact/io.github.the-best-is-best/kdownload-file)
 
 ```kotlin
-implementation("io.github.the-best-is-best:kdownload-file:2.5.0")
+implementation("io.github.the-best-is-best:kdownload-file:2.6.0")
 ````
 
 
@@ -119,6 +119,7 @@ fun DownloadButton() {
 ## 📂 What It Does
 
 - ✅ Downloads a file from a URL
+- 💾 Saves content you already have (for example a response you downloaded with your own client)
 - 📀 Saves it to a platform-specific local folder
 - 📂 Opens it using the native application for that file type
 
@@ -133,10 +134,76 @@ expect suspend fun downloadFile(
     customHeaders: Map<String, String> = emptyMap()
 ): Result<String>
 
+expect suspend fun saveFile(
+    bytes: ByteArray,
+    fileName: String,
+    folderName: String? = null,
+    configuration: KDownloadFileConfiguration = KDownloadFileConfiguration(),
+): Result<String>
+
 expect fun openFile(
     filePath: String
 )
 ````
+
+## ❗ Errors
+
+`downloadFile` sends a single request; there is no check request first. When it fails, the
+`Result` holds one of these, so you can show the right message:
+
+```kotlin
+downloadFile(url, "report.pdf").onFailure { error ->
+    when (error) {
+        is KDownloadFileHttpException -> if (error.statusCode == 404) showNoResult() else showError()
+        is KDownloadFileNoInternetException -> showNoInternet()
+        else -> showError() // KDownloadFileException or another error, e.g. a storage problem
+    }
+}
+```
+
+On an HTTP error the error page is not saved as the file, and an existing file with the same name
+is kept. The one exception is Android with `saveToDownloads = true` and `noDuplicateFile = true`:
+DownloadManager writes straight into Downloads, so the old file is removed before the download
+starts.
+
+> On iOS this applies when `ios.showLiveActivity` is `false` (the default). With Live Activities the
+> download still goes through `KDownloadFileInterop`, which checks the URL with an extra request and
+> reports a failure without the status code.
+
+## 💾 Saving content you downloaded yourself
+
+`downloadFile` makes the request for you. When you need your own HTTP client instead (auth tokens,
+one request only, the exact status code such as 404), download the bytes yourself and pass them to
+`saveFile`. It makes no network request; it saves the file to the same folders as `downloadFile`
+and returns a path you can pass to `openFile`.
+
+```kotlin
+suspend fun downloadReport(client: HttpClient, year: Int): String? {
+    val response = client.get("InterpreterJobsReport/Download") { parameter("startYear", year) }
+    if (response.status != HttpStatusCode.OK) return null // handle 404 etc. yourself
+
+    val path = saveFile(
+        bytes = response.bodyAsBytes(),
+        fileName = "InterpreterJobsReport_$year-${year + 1}.pdf",
+        folderName = "Reports",
+    ).getOrNull() ?: return null
+
+    openFile(path)
+    return path
+}
+```
+
+|         | `saveToDownloads = true` (default)                                                   | `saveInCacheFiles = true`             | neither                                    |
+|---------|--------------------------------------------------------------------------------------|---------------------------------------|--------------------------------------------|
+| Android | `Download/<app name>/<folderName>` (MediaStore on Android 10+, no permission needed) | `cacheDir/<folderName>`               | `filesDir/<folderName>`                    |
+| iOS     | `Documents/Downloads/<folderName>`                                                   | `Library/Caches/<folderName>`         | `Library/Application Support/<folderName>` |
+| Desktop | `~/Downloads/<folderName>`                                                           | `~/.kdownloadfile/cache/<folderName>` | `~/.kdownloadfile/<folderName>`            |
+| JS      | the browser downloads the file; the result is a blob URL                             |                                       |                                            |
+
+With `noDuplicateFile = true` (default) an existing file with the same name is replaced; otherwise
+the
+new file is saved as `name (1).ext`. On Android 6 to 9, saving to Downloads needs the
+`WRITE_EXTERNAL_STORAGE` permission to be granted.
 
 ## ⚙️ Configuration
 

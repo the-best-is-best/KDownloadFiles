@@ -1,5 +1,4 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.compose.compiler.gradle.ComposeFeatureFlag
 
 plugins {
     alias(libs.plugins.multiplatform)
@@ -25,7 +24,6 @@ kotlin {
 //    }
 
     listOf(
-        iosX64(),
         iosArm64(),
         iosSimulatorArm64()
     ).forEach {
@@ -49,11 +47,11 @@ kotlin {
             implementation(project(":kDownloadFile"))
         }
 
-//        commonTest.dependencies {
-//            implementation(kotlin("test"))
-//            @OptIn(ExperimentalComposeLibrary::class)
-//            implementation(compose.uiTest)
-//        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.ui.test)
+        }
+
 
         androidMain.dependencies {
             implementation(libs.ui.tooling)
@@ -73,10 +71,20 @@ kotlin {
 
     android {
         namespace = "org.company.app"
-        compileSdk = 36
+        compileSdk = libs.versions.compileSdk.get().toInt()
         minSdk = 21
 
+        withHostTest {
+            isIncludeAndroidResources = true
+        }
 
+
+    }
+
+    sourceSets.getByName("androidHostTest").dependencies {
+        implementation(libs.junit)
+        implementation(libs.robolectric)
+        implementation(libs.androidx.compose.ui.test.manifest)
     }
 }
 
@@ -104,7 +112,3 @@ compose.desktop {
     }
 }
 
-//https://github.com/JetBrains/compose-hot-reload
-composeCompiler {
-    featureFlags.add(ComposeFeatureFlag.OptimizeNonSkippingGroups)
-}

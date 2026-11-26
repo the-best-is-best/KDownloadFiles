@@ -32,7 +32,7 @@ tasks.withType<PublishToMavenRepository> {
 extra["packageNameSpace"] = "io.github.kdownloadfile"
 extra["groupId"] = "io.github.the-best-is-best"
 extra["artifactId"] = "kdownload-file"
-extra["version"] = "2.5.2"
+extra["version"] = "2.6.0"
 extra["packageName"] = "KDownloadFile"
 extra["packageUrl"] = "https://github.com/the-best-is-best/KDownloadFiles"
 extra["packageDescription"] =
@@ -97,10 +97,15 @@ kotlin {
 // Target declarations - add or remove as needed below. These define
 // which platforms this KMP module supports.
 // See: https://kotlinlang.org/docs/multiplatform-discover-project.html#targets
-    androidLibrary {
+    android {
         namespace = "io.github.kdownloadfile"
-        compileSdk = 36
+        compileSdk = libs.versions.compileSdk.get().toInt()
         minSdk = 23
+
+        withHostTest {}
+        withDeviceTest {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
 
 
     }
@@ -127,7 +132,6 @@ kotlin {
     val xcfName = "kDownloadFileKit"
 
     listOf(
-        iosX64(),
         iosArm64(),
         iosSimulatorArm64(),
     ).forEach {
@@ -137,7 +141,6 @@ kotlin {
 
         it.compilations.getByName("main") {
             val defFileName = when (target.name) {
-                "iosX64" -> "iosX64.def"
                 "iosArm64" -> "iosArm64.def"
                 "iosSimulatorArm64" -> "iosSimulatorArm64.def"
 //                "macosX64" -> "macosX64.def"
@@ -188,6 +191,18 @@ kotlin {
             }
         }
 
+        getByName("androidHostTest").dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.junit)
+        }
+
+        getByName("androidDeviceTest").dependencies {
+            implementation(libs.androidx.core)
+            implementation(libs.androidx.test.runner)
+            implementation(libs.androidx.test.ext.junit)
+            implementation(libs.junit)
+        }
+
         androidMain {
             dependencies {
                 // Add Android-specific dependencies here. Note that this source set depends on
@@ -205,7 +220,7 @@ kotlin {
         iosMain {
             dependencies {
                 // Add iOS-specific dependencies here. This a source set created by Kotlin Gradle
-                // Plugin (KGP) that each specific iOS target (e.g., iosX64) depends on as
+                // Plugin (KGP) that each specific iOS target (e.g., iosArm64) depends on as
                 // part of KMP’s default source set hierarchy. Note that this source set depends
                 // on common by default and will correctly pull the iOS artifacts of any
                 // KMP dependencies declared in commonMain.
@@ -235,7 +250,6 @@ abstract class GenerateDefFilesTask : DefaultTask() {
 
         // Map targets to their respective paths
         val targetToPath = mapOf(
-            "iosX64" to "ios-arm64_x86_64-simulator",
             "iosArm64" to "ios-arm64",
             "iosSimulatorArm64" to "ios-arm64_x86_64-simulator",
         )

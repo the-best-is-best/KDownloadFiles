@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "org.company.app.androidApp"
-    compileSdk = 36
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     packaging {
         resources {
@@ -16,19 +16,11 @@ android {
         }
     }
 
-    signingConfigs {
-        getByName("debug") {
-            storeFile =
-                file("/Users/michelleraouf/Desktop/kmm/kotlin-openid/simple/androidSimple/key")
-            storePassword = "key-pass"
-            keyPassword = "key-pass"
-            keyAlias = "key0"
-        }
-    }
+
 
     defaultConfig {
         minSdk = 24
-        targetSdk = 36
+        targetSdk = libs.versions.targetSdk.get().toInt()
 
         applicationId = "org.company.app.androidApp"
         versionCode = 1

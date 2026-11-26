@@ -1,18 +1,24 @@
 [versions]
 
-coreVersion = "1.17.0"
-kotlin = "2.3.0"
-compose = "1.10.0"
-agp = "9.0.0"
-androidx-activityCompose = "1.12.2"
-kotlinxCoroutinesCore = "1.10.2"
-core = "1.7.0"
+coreVersion = "1.19.1"
+kotlin = "2.4.20"
+compose = "1.12.2"
+agp = "9.2.0"
+androidx-activityCompose = "1.13.0"
+kotlinxCoroutinesCore = "1.11.0"
+core = "1.6.1"
 kpermissions = "2.0.1"
-material3 = "1.10.0-alpha05"
-runtime = "1.10.0"
+material3 = "1.12.0-alpha03"
 startupRuntime = "1.2.0"
-ktor = "3.3.3"
+ktor = "3.6.0"
 maven-publish = "0.35.0"
+compileSdk = "37"
+targetSdk = "37"
+androidxTestExtJunit = "1.2.1"
+androidxTestRunner = "1.6.2"
+junit = "4.13.2"
+robolectric = "4.18.1"
+androidxComposeUiTestManifest = "1.12.1"
 
 [libraries]
 
@@ -25,6 +31,12 @@ html-core = { module = "org.jetbrains.compose.html:html-core", version.ref = "co
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
 kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
 androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }
+androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestExtJunit" }
+junit = { module = "junit:junit", version.ref = "junit" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "compose" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidxComposeUiTestManifest" }
 androidx-startup-runtime = { module = "androidx.startup:startup-runtime", version.ref = "startupRuntime" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
 kpermissions-notification = { module = "io.github.the-best-is-best:kpermissions-notification", version.ref = "kpermissions" }
@@ -33,7 +45,7 @@ ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "runtime" }
+runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose" }
 the-best-is1-best-kpermissions-core = { module = "io.github.the-best-is-best:kpermissions-core", version.ref = "kpermissions" }
 ui-tooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "compose" }
 ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "compose" }

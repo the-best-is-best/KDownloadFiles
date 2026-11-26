@@ -1,0 +1,135 @@
+package io.github.kdownloadfile.internal
+
+import android.app.DownloadManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
+import android.os.Environment
+import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
+import io.github.kdownloadfile.KDownloadFileException
+import io.github.kdownloadfile.KDownloadFileHttpException
+import io.github.kdownloadfile.KDownloadFileNoInternetException
+import io.github.kdownloadfile.configration.AndroidKDownloadFileConfiguration
+import kotlinx.coroutines.suspendCancellableCoroutine
+import java.io.File
+import java.net.URI
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+
+/** Where DownloadManager writes the file. */
+internal sealed interface DownloadManagerTarget {
+    /** `Download/<relativePath>` in shared storage. */
+    data class PublicDownloads(val relativePath: String) : DownloadManagerTarget
+
+    /** The app's external files folder (`Android/data/<package>/files/<subFolder>`). */
+    data class ExternalAppFiles(val subFolder: String?, val fileName: String) :
+        DownloadManagerTarget
+}
+
+/**
+ * Downloads [url] with DownloadManager and waits until it is done.
+ *
+ * @return the file DownloadManager wrote.
+ * @throws KDownloadFileHttpException when the server answers with an error such as 404.
+ */
+internal suspend fun downloadWithDownloadManager(
+    context: Context,
+    url: String,
+    headers: Map<String, String>,
+    notification: AndroidKDownloadFileConfiguration,
+    target: DownloadManagerTarget,
+): File {
+    val request = DownloadManager.Request(url.toUri())
+        .setTitle(notification.title)
+        .setDescription(notification.description)
+        .setNotificationVisibility(notification.notificationVisibility.rawValue)
+        .setAllowedOverMetered(true)
+        .setAllowedOverRoaming(true)
+        .addRequestHeader("User-Agent", userAgent())
+    headers.forEach { (key, value) -> request.addRequestHeader(key, value) }
+    when (target) {
+        is DownloadManagerTarget.PublicDownloads ->
+            request.setDestinationInExternalPublicDir(
+                Environment.DIRECTORY_DOWNLOADS,
+                target.relativePath
+            )
+
+        is DownloadManagerTarget.ExternalAppFiles ->
+            request.setDestinationInExternalFilesDir(context, target.subFolder, target.fileName)
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        request.setRequiresCharging(false)
+        request.setRequiresDeviceIdle(false)
+    }
+
+    val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+    return suspendCancellableCoroutine { continuation ->
+        var downloadId = -1L
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context?, intent: Intent?) {
+                val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L) ?: -1L
+                if (id != downloadId) return
+                runCatching { context.unregisterReceiver(this) }
+                if (!continuation.isActive) return
+                runCatching { finishedDownload(downloadManager, downloadId) }
+                    .onSuccess { continuation.resume(it) }
+                    .onFailure { continuation.resumeWithException(it) }
+            }
+        }
+
+        // Registered before enqueue, so a very fast download cannot finish before we listen.
+        ContextCompat.registerReceiver(
+            context,
+            receiver,
+            IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+            ContextCompat.RECEIVER_EXPORTED
+        )
+        continuation.invokeOnCancellation { runCatching { context.unregisterReceiver(receiver) } }
+
+        downloadId = downloadManager.enqueue(request)
+        if (downloadId == -1L) {
+            runCatching { context.unregisterReceiver(receiver) }
+            continuation.resumeWithException(KDownloadFileException("Failed to start download"))
+        }
+    }
+}
+
+/** Reads the result of a finished download: its file, or the error it failed with. */
+private fun finishedDownload(downloadManager: DownloadManager, downloadId: Long): File {
+    val query = DownloadManager.Query().setFilterById(downloadId)
+    downloadManager.query(query)?.use { cursor ->
+        if (!cursor.moveToFirst()) throw KDownloadFileException("Download not found")
+        val status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+        val reason = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON))
+        return when (status) {
+            DownloadManager.STATUS_SUCCESSFUL -> {
+                val localUri =
+                    cursor.getString(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI))
+                File(URI.create(localUri).path)
+            }
+
+            DownloadManager.STATUS_FAILED -> throw downloadFailure(reason)
+            else -> throw KDownloadFileException("Unexpected download status: $status")
+        }
+    }
+    throw KDownloadFileException("Download not found")
+}
+
+/**
+ * For an HTTP error DownloadManager puts the status code itself in COLUMN_REASON;
+ * its own ERROR_* codes start at 1000.
+ */
+private fun downloadFailure(reason: Int): KDownloadFileException = when (reason) {
+    in 100..999 -> KDownloadFileHttpException(reason)
+    DownloadManager.ERROR_INSUFFICIENT_SPACE -> KDownloadFileException("Not enough storage space")
+    DownloadManager.ERROR_DEVICE_NOT_FOUND -> KDownloadFileException("No external storage found")
+    DownloadManager.ERROR_FILE_ALREADY_EXISTS -> KDownloadFileException("The file already exists")
+    DownloadManager.ERROR_FILE_ERROR -> KDownloadFileException("Could not write the file")
+    DownloadManager.ERROR_HTTP_DATA_ERROR -> KDownloadFileNoInternetException()
+    DownloadManager.ERROR_TOO_MANY_REDIRECTS -> KDownloadFileException("Too many redirects")
+    DownloadManager.ERROR_UNHANDLED_HTTP_CODE -> KDownloadFileException("Unexpected answer from the server")
+    else -> KDownloadFileException("Download failed with reason: $reason")
+}

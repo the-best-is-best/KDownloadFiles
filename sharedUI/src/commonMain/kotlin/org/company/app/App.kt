@@ -47,7 +47,7 @@ fun App() = AppTheme {
             onClick = {
                 scope.launch {
                         val pathRes = downloadFile(
-                            url = "https://cdn.hotelnearmedanta.com/testfile.org/testfile.org-5GB.dat",
+                            url = "https://www.rd.usda.gov/sites/default/files/pdf-sample_0.pdf",
                             fileName = "re.pdf",
                             folderName = "doc",
                             configuration = KDownloadFileConfiguration(
