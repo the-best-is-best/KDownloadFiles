@@ -14,8 +14,7 @@ import kotlinx.coroutines.CancellationException
  * [KDownloadFileNoInternetException] when the server could not be reached.
  *
  * @param onProgress called while the file downloads, on the caller's coroutine (so it can update
- *   the UI directly). Not called on iOS when `ios.showLiveActivity` is on: the Live Activity shows
- *   the progress there.
+ *   the UI directly).
  * @return the path of the saved file, which can be passed to [openFile].
  */
 suspend fun downloadFile(

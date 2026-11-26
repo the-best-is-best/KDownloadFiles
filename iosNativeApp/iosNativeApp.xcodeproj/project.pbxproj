@@ -6,10 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		B10000000000000000000010 /* KDownloadFileInterop in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000011 /* KDownloadFileInterop */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXFileReference section */
 		B10000000000000000000020 /* Native Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Native Demo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,7 +19,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B10000000000000000000010 /* KDownloadFileInterop in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -66,9 +61,6 @@
 				B10000000000000000000030 /* iosNativeApp */,
 			);
 			name = iosNativeApp;
-			packageProductDependencies = (
-				B10000000000000000000011 /* KDownloadFileInterop */,
-			);
 			productName = iosNativeApp;
 			productReference = B10000000000000000000020 /* Native Demo.app */;
 			productType = "com.apple.product-type.application";
@@ -97,9 +89,6 @@
 			);
 			mainGroup = B10000000000000000000050;
 			minimizedProjectReferenceProxies = 1;
-			packageReferences = (
-				B10000000000000000000012 /* XCRemoteSwiftPackageReference "KDownloadFileInterop" */,
-			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = B10000000000000000000051 /* Products */;
 			projectDirPath = "";
@@ -307,24 +296,6 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		B10000000000000000000012 /* XCRemoteSwiftPackageReference "KDownloadFileInterop" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/the-best-is-best/KDownloadFileInterop";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = "0.1.2-rc1";
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		B10000000000000000000011 /* KDownloadFileInterop */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B10000000000000000000012 /* XCRemoteSwiftPackageReference "KDownloadFileInterop" */;
-			productName = KDownloadFileInterop;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = B10000000000000000000080 /* Project object */;
 }

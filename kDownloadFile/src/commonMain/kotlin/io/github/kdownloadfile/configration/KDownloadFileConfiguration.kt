@@ -30,5 +30,9 @@ data class AndroidKDownloadFileConfiguration(
 )
 
 data class IosKDownloadFileConfiguration(
+    /**
+     * Shows the download as a Live Activity (iOS 16.2+). Needs the optional Swift package
+     * KFileLiveActivity in the app; without it the download runs without one.
+     */
     val showLiveActivity: Boolean = false,
 )

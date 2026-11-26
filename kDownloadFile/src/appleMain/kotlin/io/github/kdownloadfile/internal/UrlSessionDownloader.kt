@@ -36,9 +36,9 @@ import platform.Foundation.setValue
 /**
  * Downloads [url] with a single request and saves it like `saveFile` does.
  *
- * Unlike the Swift `DownloadManagerInterop`, this sends no probe request first and checks the
- * HTTP status of the download itself, so a 404 comes back as [KDownloadFileHttpException]
- * instead of being saved as the file. Reports the bytes received to [progress].
+ * It sends no probe request first and checks the HTTP status of the download itself, so a 404
+ * comes back as [KDownloadFileHttpException] instead of being saved as the file. Reports the
+ * bytes received to [progress].
  *
  * @return the path of the saved file.
  */

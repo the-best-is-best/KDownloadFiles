@@ -10,8 +10,8 @@ Only the work comes from the Kotlin library: downloading, saving, progress and e
 1. Open `iosNativeApp/iosNativeApp.xcodeproj` in **Xcode 16** or newer.
 2. Pick your team in *Signing & Capabilities* (or run on a simulator).
 3. Run. The first build runs Gradle to compile the Kotlin library into `kDownloadFileKit.framework`
-   (build phase *Compile Kotlin Framework*: `./gradlew :kDownloadFile:embedAndSignAppleFrameworkForXcode`),
-   and Xcode fetches the `KDownloadFileInterop` Swift package.
+   (build phase *Compile Kotlin Framework*: `./gradlew :kDownloadFile:embedAndSignAppleFrameworkForXcode`).
+   No Swift package is needed: this app shows no Live Activity.
 
 ## How Swift calls the library
 

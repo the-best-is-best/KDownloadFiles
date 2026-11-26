@@ -46,7 +46,7 @@
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.the-best-is-best/kdownload-file)](https://central.sonatype.com/artifact/io.github.the-best-is-best/kdownload-file)
 
 ```kotlin
-implementation("io.github.the-best-is-best:kdownload-file:2.6.0")
+implementation("io.github.the-best-is-best:kdownload-file:3.0.0")
 ```
 
 ### Android: FileProvider (needed by `openFile`)
@@ -74,14 +74,12 @@ and create `res/xml/file_paths.xml`:
 </paths>
 ```
 
-### iOS: Swift package (SPM)
+### iOS
 
-Add the Swift interop package to your iOS app with **Swift Package Manager**:
+Nothing to add: the library needs no Swift package on iOS (`openFile` uses Quick Look from Kotlin).
 
-<https://github.com/the-best-is-best/KDownloadFileInterop>
-
-It provides `openFile` and the Live Activity download. (If you use version `2.3.0-rc1` of this
-library, use `0.2.0-rc2` of KDownloadFileInterop.)
+Only for the optional **Live Activity**, add the Swift package
+[KFileLiveActivity](#-ios-live-activities-optional).
 
 ## 🚀 Quick start
 
@@ -181,7 +179,7 @@ when (val p = progress?.percent) {
 |         | `downloadFile`                                                                          | `saveFile`                                      |
 |---------|-----------------------------------------------------------------------------------------|-------------------------------------------------|
 | Android | every ¼ s from DownloadManager                                                          | per 64 KB written                               |
-| iOS     | every ¼ s from `NSURLSession` (not with `showLiveActivity`: the Live Activity shows it) | per 64 KB written                               |
+| iOS     | every ¼ s from `NSURLSession` (also shown in the Live Activity when it is on)          | per 64 KB written                               |
 | Desktop | per chunk received                                                                      | per 64 KB written                               |
 | Web     | per chunk received                                                                      | 0% then 100% (the browser saves it in one step) |
 
@@ -210,10 +208,6 @@ On an HTTP error the error page is not saved as the file, and an existing file w
 is kept. The one exception is Android with `saveToDownloads = true` and `noDuplicateFile = true`:
 DownloadManager writes straight into Downloads, so the old file is removed before the download
 starts.
-
-> On iOS this applies when `ios.showLiveActivity` is `false` (the default). With Live Activities the
-> download goes through `KDownloadFileInterop`, which checks the URL with an extra request and
-> reports a failure without the status code.
 
 ## 💾 Saving content you downloaded yourself
 
@@ -275,7 +269,7 @@ data class AndroidKDownloadFileConfiguration(
 
 ```kotlin
 data class IosKDownloadFileConfiguration(
-    val showLiveActivity: Boolean = false, // Live Activity with the progress (iOS 16.1+)
+    val showLiveActivity: Boolean = false, // Live Activity with the progress (iOS 16.2+, optional package)
 )
 ```
 
@@ -403,117 +397,33 @@ The page has buttons to download 10 MB with a percentage, download without a kno
 (`web/testFiles.ts`), slowly, so the
 percentage can be seen moving. More in [web/README.md](web/README.md).
 
-## 🍏 iOS Live Activities
+## 🍏 iOS Live Activities (optional)
 
-With `IosKDownloadFileConfiguration(showLiveActivity = true)` the download progress shows in the
-Dynamic Island and on the Lock Screen (iOS 16.1+).
+With `IosKDownloadFileConfiguration(showLiveActivity = true)` the download progress also shows on
+the Lock Screen and in the Dynamic Island (iOS 16.2+).
 
-### Requirements
+The download itself always runs in Kotlin (one request, status codes, `onProgress`). The Live
+Activity is drawn by the small Swift package **KFileLiveActivity**, which the app adds only if it
+wants one. The library does not link to it: it looks the package's class up by name when the app
+runs, so without the package everything works, just without a Live Activity.
 
-- 📱 Minimum iOS: **16.1**
-- 🧩 A Widget Extension with a Live Activity
-- 🗂️ This key in the main app's `Info.plist`:
+1. Add the Swift package [KFileLiveActivity](https://github.com/the-best-is-best/KFileLiveActivity)
+   to the iOS app (Swift Package Manager).
+2. Add `NSSupportsLiveActivities` = `YES` to the app's `Info.plist`.
+3. Add a Widget Extension that draws `FileTransferAttributes` (example in the package's README),
+   and add the package to the extension too.
+4. Turn it on: `KDownloadFileConfiguration(ios = IosKDownloadFileConfiguration(showLiveActivity = true))`.
 
-```xml
+The same package shows uploads from KUploadFiles.
 
-<key>NSSupportsLiveActivities</key><true />
-```
+### Moving from 2.x
 
-### Widget example
+Version 3 no longer uses the Swift package `KDownloadFileInterop` (deprecated):
 
-```swift
-import ActivityKit
-import WidgetKit
-import SwiftUI
-import KDownloadFileInterop
-
-struct Downloader_WidgetLiveActivity: Widget {
-    var body: some WidgetConfiguration {
-        ActivityConfiguration(for: DownloadAttributes.self) { context in
-            LiveActivityView(
-                fileName: context.attributes.fileName,
-                progress: context.state.progress,
-                status: context.state.status
-            )
-        } dynamicIsland: { context in
-            DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) {
-                    Image(systemName: "arrow.down.circle.fill")
-                        .foregroundColor(.blue)
-                        .font(.title2)
-                }
-                DynamicIslandExpandedRegion(.trailing) {
-                    Text(String(format: "%.0f%%", context.state.progress * 100))
-                        .fontWeight(.semibold)
-                        .foregroundColor(.blue)
-                }
-                DynamicIslandExpandedRegion(.bottom) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(context.attributes.fileName)
-                            .bold()
-                            .font(.headline)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                        ProgressView(value: context.state.progress)
-                            .progressViewStyle(LinearProgressViewStyle(tint: .blue))
-                        Text(context.state.status)
-                            .font(.caption2)
-                            .foregroundColor(.gray)
-                    }
-                    .padding(.top, 4)
-                }
-            } compactLeading: {
-                Image(systemName: "arrow.down.circle.fill")
-                    .foregroundColor(.blue)
-            } compactTrailing: {
-                Text(String(format: "%.0f%%", context.state.progress * 100))
-                    .fontWeight(.bold)
-                    .foregroundColor(.blue)
-            } minimal: {
-                Image(systemName: "arrow.down.circle.fill")
-                    .foregroundColor(.blue)
-            }
-            .keylineTint(Color.blue)
-        }
-    }
-}
-
-struct LiveActivityView: View {
-    let fileName: String
-    let progress: Double
-    let status: String
-
-    var body: some View {
-        VStack(spacing: 12) {
-            Text("📁 \(fileName)")
-                .font(.headline)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .foregroundColor(.white)
-
-            ProgressView(value: progress)
-                .progressViewStyle(LinearProgressViewStyle(tint: .white))
-                .scaleEffect(x: 1, y: 3, anchor: .center)
-                .background(Color.white.opacity(0.3))
-                .cornerRadius(4)
-
-            Text(status)
-                .font(.caption)
-                .foregroundColor(.white.opacity(0.8))
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(LinearGradient(
-                    gradient: Gradient(colors: [Color.blue.opacity(0.8), Color.cyan]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ))
-        )
-        .padding(8)
-    }
-}
-```
+- Remove `KDownloadFileInterop` from the app.
+- For Live Activities, add `KFileLiveActivity`, and in the widget replace `DownloadAttributes` with
+  `FileTransferAttributes` (`context.attributes.fileName`, `context.state.progress`,
+  `context.state.status`).
 
 ## 🧪 Sample apps
 

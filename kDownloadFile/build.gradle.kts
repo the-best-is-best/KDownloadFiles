@@ -33,7 +33,7 @@ tasks.withType<PublishToMavenRepository> {
 extra["packageNameSpace"] = "io.github.kdownloadfile"
 extra["groupId"] = "io.github.the-best-is-best"
 extra["artifactId"] = "kdownload-file"
-extra["version"] = "2.6.0"
+extra["version"] = "3.0.0"
 extra["packageName"] = "KDownloadFile"
 extra["packageUrl"] = "https://github.com/the-best-is-best/KDownloadFiles"
 extra["packageDescription"] =
@@ -146,37 +146,9 @@ kotlin {
     ).forEach {
         it.binaries.framework {
             baseName = xcfName
-            // Static: the app links it together with the KDownloadFileInterop Swift package it uses.
             isStatic = true
         }
-
-        it.compilations.getByName("main") {
-            val defFileName = when (target.name) {
-                "iosArm64" -> "iosArm64.def"
-                "iosSimulatorArm64" -> "iosSimulatorArm64.def"
-//                "macosX64" -> "macosX64.def"
-//                "macosArm64" -> "macosArm64.def"
-//                "tvosX64" -> "tvosX64.def"
-//                "tvosArm64" -> "tvosArm64.def"
-//                "tvosSimulatorArm64" -> "tvosSimulatorArm64.def"
-//                "watchosArm32" -> "watchosArm32.def"
-//                "watchosX64" -> "watchosX64.def"
-//                "watchosArm64" -> "watchosArm64.def"
-//                "watchosSimulatorArm64" -> "watchosSimulatorArm64.def"
-
-
-                else -> throw IllegalStateException("Unsupported target: ${target.name}")
-            }
-            val defFile = project.file("src/interop/$defFileName")
-            if (defFile.exists()) {
-                cinterops.create("KDownloadFileInterop") {
-                    defFile(defFile)
-                    packageName = "io.github.native.kdownloadfile"
-                }
-            } else {
-                logger.warn("Def file not found for target ${target.name}: ${defFile.absolutePath}")
-            }
-        }
+        // No cinterop: the optional Live Activity package (KFileLiveActivity) is found at run time.
     }
 
 
@@ -244,62 +216,4 @@ kotlin {
 
     }
 
-}
-
-
-abstract class GenerateDefFilesTask : DefaultTask() {
-
-    @get:Input
-    abstract val packageName: Property<String>
-
-    @get:OutputDirectory
-    abstract val interopDir: DirectoryProperty
-
-    @TaskAction
-    fun generate() {
-        // Ensure the directory exists
-        interopDir.get().asFile.mkdirs()
-
-        // Map targets to their respective paths
-        val targetToPath = mapOf(
-            "iosArm64" to "ios-arm64",
-            "iosSimulatorArm64" to "ios-arm64_x86_64-simulator",
-        )
-
-        // Helper function to generate header paths
-        fun headerPath(): String {
-            return interopDir.dir("libs/KDownloadFileInterop-Swift.h")
-                .get().asFile.absolutePath
-        }
-
-        // Generate headerPaths dynamically
-        val headerPaths = targetToPath.mapValues { (_, _) ->
-            headerPath()
-        }
-
-        // List of targets derived from targetToPath keys
-        val iosTargets = targetToPath.keys.toList()
-
-        // Loop through the targets and create the .def files
-        iosTargets.forEach { target ->
-            val headerPath = headerPaths[target] ?: return@forEach
-            val defFile = File(interopDir.get().asFile, "$target.def")
-
-            // Generate the content for the .def file
-            val content = """
-                language = Objective-C
-                package = ${packageName.get()}
-                headers = $headerPath
-            """.trimIndent()
-
-            // Write content to the .def file
-            defFile.writeText(content)
-            println("Generated: ${defFile.absolutePath} with headers = $headerPath")
-        }
-    }
-}
-// Register the task within the Gradle build
-tasks.register<GenerateDefFilesTask>("generateDefFiles") {
-    packageName.set("io.github.native.kdownloadfile")
-    interopDir.set(project.layout.projectDirectory.dir("src/interop"))
 }

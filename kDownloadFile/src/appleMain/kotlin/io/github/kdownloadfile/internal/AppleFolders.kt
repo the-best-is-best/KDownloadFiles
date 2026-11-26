@@ -13,7 +13,7 @@ import platform.Foundation.NSURLIsExcludedFromBackupKey
 import platform.Foundation.NSUserDomainMask
 
 /**
- * Where a file should be saved, using the same folders as the Swift `DownloadManagerInterop`:
+ * Where a file should be saved (the same folders as earlier versions of the library):
  * `Documents/Downloads`, `Library/Caches` or `Library/Application Support`, plus [folderName].
  *
  * Creates the folder. With `noDuplicateFile = false` it picks a free name; with `true` a file may
