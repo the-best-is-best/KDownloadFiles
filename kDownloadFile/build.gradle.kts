@@ -146,6 +146,8 @@ kotlin {
     ).forEach {
         it.binaries.framework {
             baseName = xcfName
+            // Static: the app links it together with the KDownloadFileInterop Swift package it uses.
+            isStatic = true
         }
 
         it.compilations.getByName("main") {

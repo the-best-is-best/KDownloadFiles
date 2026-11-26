@@ -528,6 +528,7 @@ struct LiveActivityView: View {
 |------------------------------|----------------------------------------------------------------------------------------------------------------------------|
 | `sharedUI` + `androidSimple` | Compose app: a download with notification / Live Activity, and a "Progress test" section (download 10 MB, save 20 MB, 404) |
 | `web`                        | React app using the library's JS build directly (see above)                                                                |
+| `iosNativeApp`               | Native SwiftUI iPhone app calling the library through `KDownloadFileSwift` (see [iosNativeApp/README.md](iosNativeApp/README.md)) |
 
 ## 🛡 License
 
