@@ -14,7 +14,7 @@ import kotlin.js.Promise
  *
  *   import { downloadFile, openFile, DownloadResult } from 'kdownloadfile'
  *
- *   // The browser asks the user where to save ("Save as"), then the file downloads there.
+ *   // Downloads with progress, then the browser saves it (it shows in the browser's downloads list).
  *   const result = await downloadFile(url, 'report.pdf', { onProgress: setProgress })
  *   if (result instanceof DownloadResult.Success) openFile(result.path)
  *   else if (result instanceof DownloadResult.HttpError && result.statusCode === 404) showNoResult()
@@ -26,7 +26,7 @@ private val scope = MainScope()
 
 /**
  * Options of [downloadFileForJs] and the save functions; a plain object in TypeScript, every field optional.
- * There is nothing about where to save: the browser always asks the user ("Save as").
+ * There is nothing about where to save: the browser saves the file like any download.
  *
  * - `headers`: extra request headers, for example `{ Authorization: 'Bearer …' }` (downloads only).
  * - `onProgress`: called while the file downloads or is written.
@@ -39,7 +39,7 @@ external interface FileOptions {
     val onProgress: ((DownloadProgress) -> Unit)?
 }
 
-/** Downloads [url]; the browser asks the user where to save it, suggesting [fileName]. */
+/** Downloads [url]; the browser then saves it as [fileName], like any download. */
 @JsExport
 @JsName("downloadFile")
 fun downloadFileForJs(
@@ -56,7 +56,7 @@ fun downloadFileForJs(
         ).toJs()
     }
 
-/** Saves [bytes]; the browser asks the user where, suggesting [fileName]. */
+/** Saves [bytes]; the browser saves it as [fileName], like any download. */
 @JsExport
 @JsName("saveBytes")
 fun saveBytesForJs(
@@ -71,7 +71,7 @@ fun saveBytesForJs(
         save(byteArray, fileName, options)
     }
 
-/** Saves [text] (UTF-8); the browser asks the user where, suggesting [fileName]. */
+/** Saves [text] (UTF-8); the browser saves it as [fileName], like any download. */
 @JsExport
 @JsName("saveText")
 fun saveTextForJs(
@@ -125,9 +125,6 @@ sealed class DownloadResult {
     /** The server could not be reached. */
     class NoInternet internal constructor() : DownloadResult()
 
-    /** The user closed the "Save as" window without choosing. */
-    class Cancelled internal constructor() : DownloadResult()
-
     /** Anything else; [message] says what. */
     class Failed internal constructor(val message: String) : DownloadResult()
 }
@@ -148,7 +145,6 @@ private fun Result<String>.toJs(): DownloadResult = fold(
         when (error) {
             is KDownloadFileHttpException -> DownloadResult.HttpError(error.statusCode)
             is KDownloadFileNoInternetException -> DownloadResult.NoInternet()
-            is KDownloadFileCancelledException -> DownloadResult.Cancelled()
             else -> DownloadResult.Failed(error.message ?: error.toString())
         }
     },

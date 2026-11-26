@@ -30,7 +30,7 @@ export function App() {
   return (
     <main>
       <h1>KDownloadFile · Web</h1>
-      <p className="hint">The kDownloadFile library (Kotlin/JS) called from React. The browser asks where to save.</p>
+      <p className="hint">The kDownloadFile library (Kotlin/JS) called from React. Files show in the browser's downloads list.</p>
 
       <div className="buttons">
         {jobs.map((job) => (
@@ -80,13 +80,6 @@ function ResultView({ label, result }: { label: string; result: DownloadResult }
           <span>{label}: done</span>
           <button onClick={() => openFile(result.path)}>Open</button>
         </div>
-      </section>
-    )
-  }
-  if (result instanceof DownloadResult.Cancelled) {
-    return (
-      <section className="card">
-        <span>{label}: cancelled</span>
       </section>
     )
   }

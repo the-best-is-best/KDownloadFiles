@@ -150,7 +150,7 @@ fun openFile(filePath: String)
 | Android | `Download/<app name>/<folderName>` (MediaStore on Android 10+, no permission needed) | `cacheDir/<folderName>`               | `filesDir/<folderName>`                    |
 | iOS     | `Documents/Downloads/<folderName>`                                                   | `Library/Caches/<folderName>`         | `Library/Application Support/<folderName>` |
 | Desktop | `~/Downloads/<folderName>`                                                           | `~/.kdownloadfile/cache/<folderName>` | `~/.kdownloadfile/<folderName>`            |
-| Web     | where the user chooses in the browser's "Save as" window; the result is a blob URL   |                                       |                                            |
+| Web     | the browser's own download (shows in its downloads list); the result is a blob URL  |                                       |                                            |
 
 - With `noDuplicateFile = true` (default) an existing file with the same name is replaced;
   otherwise the new one is saved as `name (1).ext`.
@@ -312,11 +312,10 @@ web/ (Vite + React)
    `vite.config.ts`), and TypeScript at the `.d.mts` (`paths` in `tsconfig.json`). React then
    imports
    it like any npm package.
-4. **In the browser** the button's click opens the browser's **"Save as"** window, where the user
-   chooses the folder and name. Then `downloadFile` uses `fetch`, reads the body chunk by chunk to
-   report progress, and writes each chunk straight into the chosen file. The result is a **blob
-   URL**
-   of the file (web pages never see real paths), which `openFile` opens in a new tab.
+4. **In the browser** `downloadFile` uses `fetch` and reads the body chunk by chunk to report
+   progress. When it is done, it hands the file to the browser's own download, so the file appears in
+   the browser's **downloads list**. The result is a **blob URL** of the file (web pages never see
+   real paths), which `openFile` opens in a new tab.
 
 ### The TypeScript API (generated)
 
@@ -337,16 +336,15 @@ class DownloadProgress { bytesDone: number; totalBytes: number | null; percent: 
 DownloadResult.Success    { path: string }        // blob URL
 DownloadResult.HttpError  { statusCode: number }  // e.g. 404
 DownloadResult.NoInternet
-DownloadResult.Cancelled                          // the user closed "Save as"
 DownloadResult.Failed     { message: string }
 ```
 
-`fileName` is the name suggested in "Save as"; the user can change it.
+`fileName` is the name the browser saves the file with.
 
 ### Using it in React
 
-The button only calls the library; the library does the rest (asks where to save, downloads,
-reports progress, returns the result):
+The button only calls the library; the library does the rest (downloads, reports progress, hands
+the file to the browser, returns the result):
 
 ```tsx
 import { useState } from 'react'
@@ -361,7 +359,7 @@ export function DownloadReportButton() {
     if (result instanceof DownloadResult.Success) openFile(result.path)
     else if (result instanceof DownloadResult.HttpError) setMessage(result.statusCode === 404 ? 'File not found' : 'Server error')
     else if (result instanceof DownloadResult.NoInternet) setMessage('No internet connection')
-    else if (!(result instanceof DownloadResult.Cancelled)) setMessage('Something went wrong')
+    else setMessage('Something went wrong')
   }
 
   return (
@@ -375,26 +373,21 @@ export function DownloadReportButton() {
 
 ### Where files go on the web
 
-On the web the **browser always asks the user** where to save, with its "Save as" window, on every
-download. `folderName` and `configuration` do not apply on the web: the user chooses the place.
+The file goes through the browser's **own download**, like any file downloaded from a website:
 
-- "Save as" needs the **File System Access API**: Chrome and Edge on desktop. Browsers without it
-  (Firefox, Safari, phones) cannot be made to ask; they save to their Downloads folder.
-- Browsers open "Save as" only right after a click, so it opens **before** the download starts.
-  That means the user chooses the place before the server answers: if the server then answers
-  with an error (for example 404), the result is `HttpError` and the empty file "Save as" created
-  is removed.
-- If the user closes "Save as", the result is `DownloadResult.Cancelled` (in Kotlin
-  `KDownloadFileCancelledException`).
+- It appears in the browser's **downloads list**, where the user can open it or show it in its folder.
+- It is saved where the browser saves downloads (usually the Downloads folder). If the user turned on
+  "Ask where to save each file" in the browser's settings, the browser asks them; a web page cannot
+  turn that on itself.
+- `folderName` and `configuration` do not apply on the web.
+- On an HTTP error (for example 404) nothing is downloaded; the result is `HttpError`.
 
 ### Web notes
 
 - **CORS:** the browser can only `fetch` a file from another site if that site sends
   `Access-Control-Allow-Origin`. Your own API usually does; a random file host may not.
-- **Memory:** after "Save as" the file is written to disk as it arrives. In browsers without "Save
-  as"
-  it is held in memory until the browser saves it, so there it suits documents and reports more than
-  very large files.
+- **Memory:** the file is held in memory until the browser saves it, so it suits documents and
+  reports more than very large files.
 
 ### Try the web sample
 
@@ -406,7 +399,7 @@ npm run dev      # http://localhost:5174
 ```
 
 The page has buttons to download 10 MB with a percentage, download without a known size, save
-20 MB, and try a 404; each one asks where to save. The test files are served by Vite itself
+20 MB, and try a 404; the files show in the browser's downloads list. The test files are served by Vite itself
 (`web/testFiles.ts`), slowly, so the
 percentage can be seen moving. More in [web/README.md](web/README.md).
 
